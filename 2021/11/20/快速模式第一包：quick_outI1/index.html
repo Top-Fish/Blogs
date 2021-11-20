@@ -18,7 +18,7 @@
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":".github.io","root":"/blogs/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"always","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"buttons","active":"valine","storage":true,"lazyload":false,"nav":null,"activeClass":"valine"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+    var CONFIG = {"hostname":".github.io","root":"/blogs/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"always","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"buttons","active":"valine","storage":true,"lazyload":false,"nav":null,"activeClass":"valine"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
   <meta name="description" content="1. 序言openswan源码中有关隧道协商的文章已经比较久没有更新了，那么从这篇开始再重新回到更新流程上。这中间停了将近2个月，第一个月几乎没有更新任何博客，而第二个月主要整理翻译QAT相关的文章，接下来我将继续更新openswan源码相关的内容。 下面开始介绍IPSec 快速模式协商流程中的第①包，主要函数的入口为**quick_outI1()**：">
@@ -184,6 +184,8 @@
     <i class="fa fa-arrow-up"></i>
     <span>0%</span>
   </div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
 
 
     <main class="main">
@@ -413,7 +415,7 @@
 </tr>
 <tr>
 <td><strong>ID_USER_FQDN</strong></td>
-<td>用户名字符串，如<a href="mailto:&#x6c;&#x69;&#x5f;&#x73;&#x69;&#x40;&#116;&#x6f;&#x70;&#x73;&#x65;&#99;&#x2e;&#x63;&#111;&#x6d;&#46;&#x63;&#x6e;">&#x6c;&#x69;&#x5f;&#x73;&#x69;&#x40;&#116;&#x6f;&#x70;&#x73;&#x65;&#99;&#x2e;&#x63;&#111;&#x6d;&#46;&#x63;&#x6e;</a></td>
+<td>用户名字符串，如<a href="mailto:&#x6c;&#x69;&#95;&#x73;&#105;&#x40;&#116;&#111;&#112;&#x73;&#x65;&#99;&#46;&#99;&#111;&#x6d;&#x2e;&#x63;&#x6e;">&#x6c;&#x69;&#95;&#x73;&#105;&#x40;&#116;&#111;&#112;&#x73;&#x65;&#99;&#46;&#99;&#111;&#x6d;&#x2e;&#x63;&#x6e;</a></td>
 <td>3</td>
 </tr>
 <tr>
@@ -481,26 +483,6 @@
     打赏
   </button>
   <div id="qr" style="display: none;">
-      
-      <div style="display: inline-block;">
-        <img src="/blogs/images/wechatpay.png" alt="叨陪鲤 微信支付">
-        <p>微信支付</p>
-      </div>
-      
-      <div style="display: inline-block;">
-        <img src="/blogs/images/alipay.png" alt="叨陪鲤 支付宝">
-        <p>支付宝</p>
-      </div>
-      
-      <div style="display: inline-block;">
-        <img src="/blogs/images/paypal.png" alt="叨陪鲤 贝宝">
-        <p>贝宝</p>
-      </div>
-      
-      <div style="display: inline-block;">
-        <img src="/blogs/images/bitcoin.png" alt="叨陪鲤 比特币">
-        <p>比特币</p>
-      </div>
 
   </div>
 </div>
@@ -569,12 +551,12 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/blogs/2021/11/20/%E5%BF%AB%E9%80%9F%E6%A8%A1%E5%BC%8F%E7%AC%AC%E4%B8%89%E5%8C%85-2%20quick_inI2()/" rel="prev" title="快速模式第三包收尾之quick_inI2()">
-      <i class="fa fa-chevron-left"></i> 快速模式第三包收尾之quick_inI2()
+    <a href="/blogs/2021/11/20/%E5%BF%AB%E9%80%9F%E6%A8%A1%E5%BC%8F%E7%AC%AC%E4%B8%89%E5%8C%85%20quick_inR1_outI2()/" rel="prev" title="快速模式第三包之quick_inR1_outI2()">
+      <i class="fa fa-chevron-left"></i> 快速模式第三包之quick_inR1_outI2()
     </a></div>
       <div class="post-nav-item">
-    <a href="/blogs/2021/11/20/%E5%BF%AB%E9%80%9F%E6%A8%A1%E5%BC%8F%E7%AC%AC%E4%B8%89%E5%8C%85%20quick_inR1_outI2()/" rel="next" title="快速模式第三包之quick_inR1_outI2()">
-      快速模式第三包之quick_inR1_outI2() <i class="fa fa-chevron-right"></i>
+    <a href="/blogs/2021/11/20/%E4%B8%BB%E6%A8%A1%E5%BC%8F%E7%AC%AC%E5%9B%9B%E5%8C%85%EF%BC%9Amain_inI2_outR2/" rel="next" title="主模式第四包：main_inI2_outR2">
+      主模式第四包：main_inI2_outR2 <i class="fa fa-chevron-right"></i>
     </a></div>
     </div>
       </footer>
@@ -773,6 +755,8 @@
 
 <script src="/blogs/js/next-boot.js"></script>
 
+<script src="/blogs/js/bookmark.js"></script>
+
   <script>
 var pjax = new Pjax({
   selectors: [
@@ -875,7 +859,7 @@ NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
       notify     : false,
       appId      : 'MQdIgAGKML1LrVfkG1rbQUgO-gzGzoHsz',
       appKey     : '3ECTEO4bp11EiKGpp4bTd07P',
-      placeholder: "欢迎留言交流学习！",
+      placeholder: "欢迎留言交流学习",
       avatar     : 'robohash',
       meta       : guest,
       pageSize   : '10' || 10,

@@ -18,7 +18,7 @@
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":".github.io","root":"/blogs/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"always","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"buttons","active":"valine","storage":true,"lazyload":false,"nav":null,"activeClass":"valine"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+    var CONFIG = {"hostname":".github.io","root":"/blogs/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"always","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":true,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"buttons","active":"valine","storage":true,"lazyload":false,"nav":null,"activeClass":"valine"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
   <meta name="description" content="1. 序言main_inI1_outR1()函数是ISAKMP协商过程中第二包的核心处理函数，同时也是响应端口的首包。这里我们主要说明main_inI1_outR1的处理流程，关于main_inI1_outR1的上下文环境暂不叙述，留给后面的文章进行更新。">
@@ -182,6 +182,8 @@
     <i class="fa fa-arrow-up"></i>
     <span>0%</span>
   </div>
+  <div class="reading-progress-bar"></div>
+  <a role="button" class="book-mark-link book-mark-link-fixed"></a>
 
 
     <main class="main">
@@ -291,26 +293,6 @@
     打赏
   </button>
   <div id="qr" style="display: none;">
-      
-      <div style="display: inline-block;">
-        <img src="/blogs/images/wechatpay.png" alt="叨陪鲤 微信支付">
-        <p>微信支付</p>
-      </div>
-      
-      <div style="display: inline-block;">
-        <img src="/blogs/images/alipay.png" alt="叨陪鲤 支付宝">
-        <p>支付宝</p>
-      </div>
-      
-      <div style="display: inline-block;">
-        <img src="/blogs/images/paypal.png" alt="叨陪鲤 贝宝">
-        <p>贝宝</p>
-      </div>
-      
-      <div style="display: inline-block;">
-        <img src="/blogs/images/bitcoin.png" alt="叨陪鲤 比特币">
-        <p>比特币</p>
-      </div>
 
   </div>
 </div>
@@ -379,12 +361,12 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/blogs/2021/11/20/%E4%B8%BB%E6%A8%A1%E5%BC%8F%E7%AC%AC%E4%BA%94%E5%8C%85%EF%BC%9Amain_inR2_outI3/" rel="prev" title="主模式第五包：main_inR2_outI3">
-      <i class="fa fa-chevron-left"></i> 主模式第五包：main_inR2_outI3
+    <a href="/blogs/2021/11/20/%E4%B8%BB%E6%A8%A1%E5%BC%8F%E7%AC%AC%E5%85%AD%E5%8C%85%EF%BC%9Amain_inI3_outR3/" rel="prev" title="主模式第六包：main_inI3_outR 3">
+      <i class="fa fa-chevron-left"></i> 主模式第六包：main_inI3_outR 3
     </a></div>
       <div class="post-nav-item">
-    <a href="/blogs/2021/11/20/%E4%B8%BB%E6%A8%A1%E5%BC%8F%E7%AC%AC%E4%B8%80%E5%8C%85%EF%BC%9Amain_outI1()/" rel="next" title="主模式第一包：main_outI1()">
-      主模式第一包：main_outI1() <i class="fa fa-chevron-right"></i>
+    <a href="/blogs/2021/11/20/%E4%B8%BB%E6%A8%A1%E5%BC%8F%E7%AC%AC%E4%B8%89%E5%8C%85%EF%BC%9Amain_inR1_outI2/" rel="next" title="主模式第三包：main_inR1_outI2">
+      主模式第三包：main_inR1_outI2 <i class="fa fa-chevron-right"></i>
     </a></div>
     </div>
       </footer>
@@ -583,6 +565,8 @@
 
 <script src="/blogs/js/next-boot.js"></script>
 
+<script src="/blogs/js/bookmark.js"></script>
+
   <script>
 var pjax = new Pjax({
   selectors: [
@@ -685,7 +669,7 @@ NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
       notify     : false,
       appId      : 'MQdIgAGKML1LrVfkG1rbQUgO-gzGzoHsz',
       appKey     : '3ECTEO4bp11EiKGpp4bTd07P',
-      placeholder: "欢迎留言交流学习！",
+      placeholder: "欢迎留言交流学习",
       avatar     : 'robohash',
       meta       : guest,
       pageSize   : '10' || 10,
