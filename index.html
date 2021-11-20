@@ -21,12 +21,12 @@
     var CONFIG = {"hostname":".github.io","root":"/blogs/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="滴滴滴滴滴多多多多">
+  <meta name="description" content="他日趋庭，叨陪鲤对">
 <meta property="og:type" content="website">
 <meta property="og:title" content="遇见你是我最美丽的意外">
 <meta property="og:url" content="https://.github.io/blogs/index.html">
 <meta property="og:site_name" content="遇见你是我最美丽的意外">
-<meta property="og:description" content="滴滴滴滴滴多多多多">
+<meta property="og:description" content="他日趋庭，叨陪鲤对">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:author" content="叨陪鲤">
 <meta property="article:tag" content="给岁月以文明">
@@ -188,7 +188,7 @@
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/blogs/images/me.jpg">
       <meta itemprop="name" content="叨陪鲤">
-      <meta itemprop="description" content="滴滴滴滴滴多多多多">
+      <meta itemprop="description" content="他日趋庭，叨陪鲤对">
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
@@ -212,6 +212,20 @@
             </span>
 
           
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/blogs/2021/11/20/hello/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/blogs/2021/11/20/hello/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
 
         </div>
       </header>
@@ -247,7 +261,7 @@
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/blogs/images/me.jpg">
       <meta itemprop="name" content="叨陪鲤">
-      <meta itemprop="description" content="滴滴滴滴滴多多多多">
+      <meta itemprop="description" content="他日趋庭，叨陪鲤对">
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
@@ -284,6 +298,20 @@
             </span>
 
           
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/blogs/2021/11/20/openswan%E4%B8%93%E6%A0%8F%E7%9B%AE%E5%BD%95/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/blogs/2021/11/20/openswan%E4%B8%93%E6%A0%8F%E7%9B%AE%E5%BD%95/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
 
         </div>
       </header>
@@ -380,7 +408,7 @@
     <img class="site-author-image" itemprop="image" alt="叨陪鲤"
       src="/blogs/images/me.jpg">
   <p class="site-author-name" itemprop="name">叨陪鲤</p>
-  <div class="site-description" itemprop="description">滴滴滴滴滴多多多多</div>
+  <div class="site-description" itemprop="description">他日趋庭，叨陪鲤对</div>
 </div>
 <div class="site-state-wrap motion-element">
   <nav class="site-state">
@@ -562,6 +590,35 @@ window.addEventListener('pjax:success', () => {
   
 
   
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('[object Object]', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'MQdIgAGKML1LrVfkG1rbQUgO-gzGzoHsz',
+      appKey     : '3ECTEO4bp11EiKGpp4bTd07P',
+      placeholder: "欢迎留言交流学习！",
+      avatar     : 'robohash',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : 'en, zh-cn' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
 
     </div>
 </body>

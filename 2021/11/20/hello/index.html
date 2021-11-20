@@ -191,7 +191,7 @@
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/blogs/images/me.jpg">
       <meta itemprop="name" content="叨陪鲤">
-      <meta itemprop="description" content="滴滴滴滴滴多多多多">
+      <meta itemprop="description" content="他日趋庭，叨陪鲤对">
     </span>
 
     <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
@@ -214,6 +214,20 @@
             </span>
 
           
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/blogs/2021/11/20/hello/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/blogs/2021/11/20/hello/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
 
         </div>
       </header>
@@ -259,6 +273,7 @@
 
           </div>
           
+    <div class="comments" id="valine-comments"></div>
 
 <script>
   window.addEventListener('tabs:register', () => {
@@ -314,7 +329,7 @@
     <img class="site-author-image" itemprop="image" alt="叨陪鲤"
       src="/blogs/images/me.jpg">
   <p class="site-author-name" itemprop="name">叨陪鲤</p>
-  <div class="site-description" itemprop="description">滴滴滴滴滴多多多多</div>
+  <div class="site-description" itemprop="description">他日趋庭，叨陪鲤对</div>
 </div>
 <div class="site-state-wrap motion-element">
   <nav class="site-state">
@@ -496,6 +511,35 @@ window.addEventListener('pjax:success', () => {
   
 
   
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('[object Object]', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'MQdIgAGKML1LrVfkG1rbQUgO-gzGzoHsz',
+      appKey     : '3ECTEO4bp11EiKGpp4bTd07P',
+      placeholder: "欢迎留言交流学习！",
+      avatar     : 'robohash',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : 'en, zh-cn' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
 
     </div>
 </body>
