@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/blogs/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/blogs/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/blogs/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/blogs/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/blogs/css/main.css">
+
+
+<link rel="stylesheet" href="/blogs/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":".github.io","root":"/blogs/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"always","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"buttons","active":"valine","storage":true,"lazyload":false,"nav":null,"activeClass":"valine"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="1. 序言main_inI1_outR1()函数是ISAKMP协商过程中第二包的核心处理函数，同时也是响应端口的首包。这里我们主要说明main_inI1_outR1的处理流程，关于main_inI1_outR1的上下文环境暂不叙述，留给后面的文章进行更新。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="主模式第二包：main_inI1_outR1()">
+<meta property="og:url" content="https://.github.io/blogs/2021/11/20/%E4%B8%BB%E6%A8%A1%E5%BC%8F%E7%AC%AC%E4%BA%8C%E5%8C%85%EF%BC%9Amain_inI1_outR1()/index.html">
+<meta property="og:site_name" content="遇见你是我最美丽的意外">
+<meta property="og:description" content="1. 序言main_inI1_outR1()函数是ISAKMP协商过程中第二包的核心处理函数，同时也是响应端口的首包。这里我们主要说明main_inI1_outR1的处理流程，关于main_inI1_outR1的上下文环境暂不叙述，留给后面的文章进行更新。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://raw.githubusercontent.com/Top-Fish/PhotoRepository/main/img/SSL-TLS/20211120205011.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/Top-Fish/PhotoRepository/main/img/SSL-TLS/20211120205022.png">
+<meta property="article:published_time" content="2021-11-20T13:28:38.000Z">
+<meta property="article:modified_time" content="2021-11-20T14:49:54.769Z">
+<meta property="article:author" content="叨陪鲤">
+<meta property="article:tag" content="IPSec">
+<meta property="article:tag" content="openswan">
+<meta property="article:tag" content="VPN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/Top-Fish/PhotoRepository/main/img/SSL-TLS/20211120205011.png">
+
+<link rel="canonical" href="https://.github.io/blogs/2021/11/20/%E4%B8%BB%E6%A8%A1%E5%BC%8F%E7%AC%AC%E4%BA%8C%E5%8C%85%EF%BC%9Amain_inI1_outR1()/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>主模式第二包：main_inI1_outR1() | 遇见你是我最美丽的意外</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/blogs/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">遇见你是我最美丽的意外</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">红红火火恍恍惚惚或</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-主页">
+
+    <a href="/blogs/" rel="section"><i class="fa fa-home fa-fw"></i>主页</a>
+
+  </li>
+        <li class="menu-item menu-item-标签">
+
+    <a href="/blogs/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-分类">
+
+    <a href="/blogs/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/blogs/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://.github.io/blogs/2021/11/20/%E4%B8%BB%E6%A8%A1%E5%BC%8F%E7%AC%AC%E4%BA%8C%E5%8C%85%EF%BC%9Amain_inI1_outR1()/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/blogs/images/me.jpg">
+      <meta itemprop="name" content="叨陪鲤">
+      <meta itemprop="description" content="他日趋庭，叨陪鲤对">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="遇见你是我最美丽的意外">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          主模式第二包：main_inI1_outR1()
+        </h1>
+
+        <div class="post-meta">
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2021-11-20 21:28:38 / 修改时间：22:49:54" itemprop="dateCreated datePublished" datetime="2021-11-20T21:28:38+08:00">2021-11-20</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/blogs/categories/ipsec/" itemprop="url" rel="index"><span itemprop="name">IPSecVPN</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/blogs/categories/ipsec/openswan/" itemprop="url" rel="index"><span itemprop="name">openswan</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/blogs/2021/11/20/%E4%B8%BB%E6%A8%A1%E5%BC%8F%E7%AC%AC%E4%BA%8C%E5%8C%85%EF%BC%9Amain_inI1_outR1()/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/blogs/2021/11/20/%E4%B8%BB%E6%A8%A1%E5%BC%8F%E7%AC%AC%E4%BA%8C%E5%8C%85%EF%BC%9Amain_inI1_outR1()/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="1-序言"><a href="#1-序言" class="headerlink" title="1. 序言"></a>1. 序言</h2><p><code>main_inI1_outR1()</code>函数是ISAKMP协商过程中第二包的核心处理函数，同时也是响应端口的首包。这里我们主要说明<code>main_inI1_outR1</code>的处理流程，关于<code>main_inI1_outR1</code>的上下文环境暂不叙述，留给后面的文章进行更新。</p>
+<span id="more"></span>
+<p>ISAKMP协商报文的处理流程都比较复杂，一个函数有几百行都是很常见的，因此个人学习期间难免有遗漏和理解错误的地方，请大家多多批评指正。</p>
+<h3 id="2-main-inI1-outR1-处理流程图"><a href="#2-main-inI1-outR1-处理流程图" class="headerlink" title="2. main_inI1_outR1()处理流程图"></a>2. <code>main_inI1_outR1()</code>处理流程图</h3><p><img src="https://raw.githubusercontent.com/Top-Fish/PhotoRepository/main/img/SSL-TLS/20211120205011.png" alt="image-20200520004303196"></p>
+<p><img src="https://raw.githubusercontent.com/Top-Fish/PhotoRepository/main/img/SSL-TLS/20211120205022.png" alt="image-20200520004352037"></p>
+<h3 id="3-main-inI1-outR1-源码"><a href="#3-main-inI1-outR1-源码" class="headerlink" title="3. main_inI1_outR1()源码"></a>3. <code>main_inI1_outR1()源码</code></h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br><span class="line">198</span><br><span class="line">199</span><br><span class="line">200</span><br><span class="line">201</span><br><span class="line">202</span><br><span class="line">203</span><br><span class="line">204</span><br><span class="line">205</span><br><span class="line">206</span><br><span class="line">207</span><br><span class="line">208</span><br><span class="line">209</span><br><span class="line">210</span><br><span class="line">211</span><br><span class="line">212</span><br><span class="line">213</span><br><span class="line">214</span><br><span class="line">215</span><br><span class="line">216</span><br><span class="line">217</span><br><span class="line">218</span><br><span class="line">219</span><br><span class="line">220</span><br><span class="line">221</span><br><span class="line">222</span><br><span class="line">223</span><br><span class="line">224</span><br><span class="line">225</span><br><span class="line">226</span><br><span class="line">227</span><br><span class="line">228</span><br><span class="line">229</span><br><span class="line">230</span><br><span class="line">231</span><br><span class="line">232</span><br><span class="line">233</span><br><span class="line">234</span><br><span class="line">235</span><br><span class="line">236</span><br><span class="line">237</span><br><span class="line">238</span><br><span class="line">239</span><br><span class="line">240</span><br><span class="line">241</span><br><span class="line">242</span><br><span class="line">243</span><br><span class="line">244</span><br><span class="line">245</span><br><span class="line">246</span><br><span class="line">247</span><br><span class="line">248</span><br><span class="line">249</span><br><span class="line">250</span><br><span class="line">251</span><br><span class="line">252</span><br><span class="line">253</span><br><span class="line">254</span><br><span class="line">255</span><br><span class="line">256</span><br><span class="line">257</span><br><span class="line">258</span><br><span class="line">259</span><br><span class="line">260</span><br><span class="line">261</span><br><span class="line">262</span><br><span class="line">263</span><br><span class="line">264</span><br><span class="line">265</span><br><span class="line">266</span><br><span class="line">267</span><br><span class="line">268</span><br><span class="line">269</span><br><span class="line">270</span><br><span class="line">271</span><br><span class="line">272</span><br><span class="line">273</span><br><span class="line">274</span><br><span class="line">275</span><br><span class="line">276</span><br><span class="line">277</span><br><span class="line">278</span><br><span class="line">279</span><br><span class="line">280</span><br><span class="line">281</span><br><span class="line">282</span><br><span class="line">283</span><br><span class="line">284</span><br><span class="line">285</span><br><span class="line">286</span><br><span class="line">287</span><br><span class="line">288</span><br><span class="line">289</span><br><span class="line">290</span><br><span class="line">291</span><br><span class="line">292</span><br><span class="line">293</span><br><span class="line">294</span><br><span class="line">295</span><br><span class="line">296</span><br><span class="line">297</span><br><span class="line">298</span><br><span class="line">299</span><br><span class="line">300</span><br><span class="line">301</span><br><span class="line">302</span><br><span class="line">303</span><br><span class="line">304</span><br><span class="line">305</span><br><span class="line">306</span><br><span class="line">307</span><br><span class="line">308</span><br><span class="line">309</span><br><span class="line">310</span><br><span class="line">311</span><br><span class="line">312</span><br><span class="line">313</span><br><span class="line">314</span><br><span class="line">315</span><br><span class="line">316</span><br><span class="line">317</span><br><span class="line">318</span><br><span class="line">319</span><br><span class="line">320</span><br><span class="line">321</span><br><span class="line">322</span><br><span class="line">323</span><br><span class="line">324</span><br><span class="line">325</span><br><span class="line">326</span><br><span class="line">327</span><br><span class="line">328</span><br><span class="line">329</span><br><span class="line">330</span><br><span class="line">331</span><br><span class="line">332</span><br><span class="line">333</span><br><span class="line">334</span><br><span class="line">335</span><br><span class="line">336</span><br><span class="line">337</span><br><span class="line">338</span><br><span class="line">339</span><br><span class="line">340</span><br><span class="line">341</span><br><span class="line">342</span><br><span class="line">343</span><br><span class="line">344</span><br><span class="line">345</span><br><span class="line">346</span><br><span class="line">347</span><br><span class="line">348</span><br><span class="line">349</span><br><span class="line">350</span><br><span class="line">351</span><br><span class="line">352</span><br><span class="line">353</span><br><span class="line">354</span><br><span class="line">355</span><br><span class="line">356</span><br><span class="line">357</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* State Transition Functions.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * The definition of state_microcode_table in demux.c is a good</span></span><br><span class="line"><span class="comment"> * overview of these routines.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * - Called from process_packet; result handled by complete_v1_state_transition</span></span><br><span class="line"><span class="comment"> * - struct state_microcode member &quot;processor&quot; points to these</span></span><br><span class="line"><span class="comment"> * - these routine definitionss are in state order</span></span><br><span class="line"><span class="comment"> * - these routines must be restartable from any point of error return:</span></span><br><span class="line"><span class="comment"> *   beware of memory allocated before any error.</span></span><br><span class="line"><span class="comment"> * - output HDR is usually emitted by process_packet (if state_microcode</span></span><br><span class="line"><span class="comment"> *   member first_out_payload isn&#x27;t ISAKMP_NEXT_NONE).</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * The transition functions&#x27; functions include:</span></span><br><span class="line"><span class="comment"> * - process and judge payloads</span></span><br><span class="line"><span class="comment"> * - update st_iv (result of decryption is in st_new_iv)</span></span><br><span class="line"><span class="comment"> * - build reply packet</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"></span><br><span class="line"><span class="comment">/* Handle a Main Mode Oakley first packet (responder side).</span></span><br><span class="line"><span class="comment"> * HDR;SA --&gt; HDR;SA</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"></span><br><span class="line"><span class="comment">/********************************</span></span><br><span class="line"><span class="comment">*main_inI1_outR1函数被process_packet函数调用</span></span><br><span class="line"><span class="comment">*它的返回结果由complete_v1_state_transition处理</span></span><br><span class="line"><span class="comment">*</span></span><br><span class="line"><span class="comment">*********************************/</span></span><br><span class="line"><span class="function">stf_status</span></span><br><span class="line"><span class="function"><span class="title">main_inI1_outR1</span><span class="params">(struct msg_digest *md)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">ifdef</span> DMALLOC</span></span><br><span class="line">     <span class="keyword">if</span> (_dm_initialized != <span class="number">0</span>) &#123;</span><br><span class="line">	<span class="comment">/* log unfreed pointers that have been added to the heap since mark */</span></span><br><span class="line">	dmalloc_log_changed(_dm_mark, <span class="number">1</span>, <span class="number">0</span>, <span class="number">1</span>);</span><br><span class="line">	dmalloc_log_stats ();</span><br><span class="line">     &#125;</span><br><span class="line">     _dm_mark = dmalloc_mark() ;</span><br><span class="line">     _dm_initialized = <span class="number">1</span>;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line"><span class="comment">/*接收到的数据包中的SA载荷部分*/</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">payload_digest</span> *<span class="title">const</span> <span class="title">sa_pd</span> =</span> md-&gt;chain[ISAKMP_NEXT_SA];</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">state</span> *<span class="title">st</span>;</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">connection</span> *<span class="title">c</span>;</span></span><br><span class="line"><span class="comment">/*准备作为应答的SA载荷缓冲区*/</span></span><br><span class="line">    pb_stream r_sa_pbs;</span><br><span class="line">    <span class="keyword">lset_t</span> policy_hint = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* we are looking for an OpenPGP Vendor ID sent by the peer */</span></span><br><span class="line">    <span class="keyword">bool</span> openpgp_peer = FALSE;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* Determin how many Vendor ID payloads we will be sending */</span></span><br><span class="line">    <span class="keyword">int</span> next;</span><br><span class="line">    <span class="keyword">int</span> numvidtosend = <span class="number">1</span>;  <span class="comment">/* we always send DPD VID */</span></span><br><span class="line"><span class="comment">/*至少会发送DPD的VID,因此初始值为1*/</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">ifdef</span> NAT_TRAVERSAL   <span class="comment">/*支持NAT-T,则增加一个nat-t探测的VID*/</span></span></span><br><span class="line">    <span class="keyword">if</span> (md-&gt;quirks.nat_traversal_vid &amp;&amp; nat_traversal_enabled) &#123;</span><br><span class="line">	DBG(DBG_NATT, DBG_log(<span class="string">&quot;nat-t detected, sending nat-t VID&quot;</span>));</span><br><span class="line">	numvidtosend++;</span><br><span class="line">    &#125;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line"><span class="comment">/*如果预定义了PLUUO VID 或openpgp 对端, 增加VID 数量*/</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">if</span> SEND_PLUTO_VID || defined(openpgp_peer)</span></span><br><span class="line">    numvidtosend++;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">if</span> defined(openpgp_peer)</span></span><br><span class="line">    &#123;</span><br><span class="line">	    <span class="class"><span class="keyword">struct</span> <span class="title">payload_digest</span> *<span class="title">p</span>;</span></span><br><span class="line">	   <span class="comment">/*遍历接收到的数据包中的VID 载荷链表*/</span></span><br><span class="line">	    <span class="keyword">for</span> (p = md-&gt;chain[ISAKMP_NEXT_VID]; p != <span class="literal">NULL</span>; p = p-&gt;next)</span><br><span class="line">		&#123;</span><br><span class="line">		    <span class="keyword">int</span> vid_len = <span class="keyword">sizeof</span>(pgp_vendorid) - <span class="number">1</span> &lt; pbs_left(&amp;p-&gt;pbs)</span><br><span class="line">			? <span class="keyword">sizeof</span>(pgp_vendorid) - <span class="number">1</span> : pbs_left(&amp;p-&gt;pbs);</span><br><span class="line"></span><br><span class="line">		    <span class="comment">/*检查是否是pgp VID, 是则设置openpgp_peer 标志为TRUE*/</span></span><br><span class="line">		    <span class="keyword">if</span> (<span class="built_in">memcmp</span>(pgp_vendorid, p-&gt;pbs.cur, vid_len) == <span class="number">0</span>)</span><br><span class="line">			&#123;</span><br><span class="line">			    openpgp_peer = TRUE;</span><br><span class="line">			    DBG(DBG_PARSING,</span><br><span class="line">				DBG_log(<span class="string">&quot;we have an OpenPGP peer&quot;</span>)</span><br><span class="line">				)</span><br><span class="line">				&#125;</span><br><span class="line">		&#125;</span><br><span class="line">    &#125;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line"></span><br><span class="line">    <span class="comment">/*根据接收到的数据包的目的地址,目的端口,源地址,源端口查找连接结构*/</span></span><br><span class="line">    <span class="comment">/* random source ports are handled by find_host_connection */</span></span><br><span class="line">    c = find_host_connection(ANY_MATCH, &amp;md-&gt;iface-&gt;ip_addr, pluto_port500</span><br><span class="line">                             , KH_IPADDR</span><br><span class="line">			     , &amp;md-&gt;sender</span><br><span class="line">			     , md-&gt;sender_port, LEMPTY, POLICY_IKEV1_DISABLE, &amp;policy_hint);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (c == <span class="literal">NULL</span>)<span class="comment">/*如果没找到*/</span></span><br><span class="line">    &#123;</span><br><span class="line">	pb_stream pre_sa_pbs = sa_pd-&gt;pbs;</span><br><span class="line">	<span class="keyword">lset_t</span> policy = preparse_isakmp_sa_body(&amp;pre_sa_pbs);</span><br><span class="line">	<span class="comment">/*</span></span><br><span class="line"><span class="comment">	 * If there is XAUTH VID, copy it to policies.</span></span><br><span class="line"><span class="comment">	 */</span></span><br><span class="line">	<span class="keyword">if</span> (md-&gt;quirks.xauth_vid == TRUE)</span><br><span class="line">	&#123;</span><br><span class="line">	  policy |= POLICY_XAUTH;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">/* See if a wildcarded connection can be found.</span></span><br><span class="line"><span class="comment">	 * We cannot pick the right connection, so we&#x27;re making a guess.</span></span><br><span class="line"><span class="comment">	 * All Road Warrior connections are fair game:</span></span><br><span class="line"><span class="comment">	 * we pick the first we come across (if any).</span></span><br><span class="line"><span class="comment">	 * If we don&#x27;t find any, we pick the first opportunistic</span></span><br><span class="line"><span class="comment">	 * with the smallest subnet that includes the peer.</span></span><br><span class="line"><span class="comment">	 * There is, of course, no necessary relationship between</span></span><br><span class="line"><span class="comment">	 * an Initiator&#x27;s address and that of its client,</span></span><br><span class="line"><span class="comment">	 * but Food Groups kind of assumes one.</span></span><br><span class="line"><span class="comment">	 */</span></span><br><span class="line">	&#123;</span><br><span class="line">	<span class="comment">// 可能是那种未定义对方地址的动态连接, 将源地址条件置空,重新查找连接,</span></span><br><span class="line">       <span class="comment">// 可能会找到多个连接结构,返回的是一个链表</span></span><br><span class="line">	    <span class="class"><span class="keyword">struct</span> <span class="title">connection</span> *<span class="title">d</span>;</span></span><br><span class="line">	    d = find_host_connection(ANY_MATCH, &amp;md-&gt;iface-&gt;ip_addr, pluto_port500</span><br><span class="line">                                     , KH_ANY</span><br><span class="line">				     , (ip_address*)<span class="literal">NULL</span></span><br><span class="line">				     , md-&gt;sender_port, policy, POLICY_IKEV1_DISABLE, &amp;policy_hint);</span><br><span class="line">           <span class="comment">// 遍历链表</span></span><br><span class="line">	    <span class="keyword">for</span> (; d != <span class="literal">NULL</span>; d = d-&gt;IPhp_next)</span><br><span class="line">	    &#123;</span><br><span class="line">	       <span class="comment">// GROUP 类型连接不考虑</span></span><br><span class="line">		<span class="keyword">if</span> (d-&gt;kind == CK_GROUP)</span><br><span class="line">		&#123;</span><br><span class="line">		    <span class="comment">/* ignore */</span></span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">else</span></span><br><span class="line">		&#123;</span><br><span class="line">		<span class="comment">// 如果连接类型为模板型而且没定义OE, 该连接可用于处理该数据包, 连接找到,中断循环</span></span><br><span class="line">		    <span class="keyword">if</span> (d-&gt;kind == CK_TEMPLATE &amp;&amp; !(d-&gt;policy &amp; POLICY_OPPO))</span><br><span class="line">		    &#123;</span><br><span class="line">			<span class="comment">/* must be Road Warrior: we have a winner */</span></span><br><span class="line">			c = d;</span><br><span class="line">			<span class="keyword">break</span>;</span><br><span class="line">		    &#125;</span><br><span class="line"></span><br><span class="line">		    <span class="comment">/* Opportunistic or Shunt: pick tightest match */</span></span><br><span class="line">			<span class="comment">// 比较数据包源地址是否匹配连接中对方地址的定义</span></span><br><span class="line">		    <span class="keyword">if</span> (addrinsubnet(&amp;md-&gt;sender, &amp;d-&gt;spd.that.client)</span><br><span class="line">		      <span class="comment">// 而且目前可用连接为空,或目前可用连接的地址范围比新找到的连接范围大, 更新可用连接</span></span><br><span class="line">		    &amp;&amp; (c == <span class="literal">NULL</span> || !subnetinsubnet(&amp;c-&gt;spd.that.client, &amp;d-&gt;spd.that.client)))</span><br><span class="line">			c = d;</span><br><span class="line">		&#125;</span><br><span class="line">	    &#125;</span><br><span class="line">	&#125;</span><br><span class="line">       <span class="comment">// 如果没找到连接, 该数据包处理不了, 返回忽略该数据包</span></span><br><span class="line">	<span class="keyword">if</span> (c == <span class="literal">NULL</span>)</span><br><span class="line">	&#123;</span><br><span class="line">	    loglog(RC_LOG_SERIOUS, <span class="string">&quot;initial Main Mode message received on %s:%u&quot;</span></span><br><span class="line">		<span class="string">&quot; but no connection has been authorized%s%s&quot;</span></span><br><span class="line">		, ip_str(&amp;md-&gt;iface-&gt;ip_addr), ntohs(portof(&amp;md-&gt;iface-&gt;ip_addr))</span><br><span class="line">		, (policy != LEMPTY) ? <span class="string">&quot; with policy=&quot;</span> : <span class="string">&quot;&quot;</span></span><br><span class="line">		, (policy != LEMPTY) ? bitnamesof(sa_policy_bit_names, policy) : <span class="string">&quot;&quot;</span>);</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span>(policy_hint &amp; POLICY_IKEV1_DISABLE) &#123;</span><br><span class="line">                md-&gt;note = INVALID_MAJOR_VERSION;</span><br><span class="line">                <span class="keyword">return</span> STF_FAIL;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">	    <span class="comment">/* XXX notification is in order! */</span></span><br><span class="line">	    <span class="keyword">return</span> STF_IGNORE;</span><br><span class="line">	&#125;<span class="comment">/* 否则如果不是模板类型连接(动态连接), 返回忽略*/</span></span><br><span class="line">	<span class="keyword">else</span> <span class="keyword">if</span> (c-&gt;kind != CK_TEMPLATE)</span><br><span class="line">	&#123;</span><br><span class="line">	    loglog(RC_LOG_SERIOUS, <span class="string">&quot;initial Main Mode message received on %s:%u&quot;</span></span><br><span class="line">		<span class="string">&quot; but \&quot;%s\&quot; forbids connection&quot;</span></span><br><span class="line">		, ip_str(&amp;md-&gt;iface-&gt;ip_addr), pluto_port500, c-&gt;name);</span><br><span class="line">	    <span class="comment">/* XXX notification is in order! */</span></span><br><span class="line">	    <span class="keyword">return</span> STF_IGNORE;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">else</span></span><br><span class="line">	&#123;</span><br><span class="line">	    <span class="comment">/* Create a temporary connection that is a copy of this one.</span></span><br><span class="line"><span class="comment">	     * His ID isn&#x27;t declared yet.</span></span><br><span class="line"><span class="comment">	     */</span></span><br><span class="line">	   DBG(DBG_CONTROL, DBG_log(<span class="string">&quot;instantiating \&quot;%s\&quot; for initial Main Mode message received on %s:%u&quot;</span></span><br><span class="line">		, c-&gt;name, ip_str(&amp;md-&gt;iface-&gt;ip_addr), pluto_port500));</span><br><span class="line">	<span class="comment">// 将模板连接进行实例化, 根据模板连接新生成一个新连接结构, 填充对方地址</span></span><br><span class="line">	    c = rw_instantiate(c, &amp;md-&gt;sender</span><br><span class="line">			       , <span class="literal">NULL</span>, <span class="literal">NULL</span>);</span><br><span class="line">	&#125;</span><br><span class="line">     &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">	<span class="comment">/* we found a non-wildcard conn. double check if it needs instantiation anyway (eg vnet=) */</span></span><br><span class="line">	<span class="keyword">if</span> ((c-&gt;kind == CK_TEMPLATE) &amp;&amp; c-&gt;spd.that.virt) &#123;</span><br><span class="line">	   DBG(DBG_CONTROL, DBG_log(<span class="string">&quot;local endpoint has virt (vnet/vhost) set without wildcards - needs instantiation&quot;</span>));</span><br><span class="line">	   c = rw_instantiate(c,&amp;md-&gt;sender,<span class="literal">NULL</span>,<span class="literal">NULL</span>);</span><br><span class="line">	&#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">ifdef</span> XAUTH</span></span><br><span class="line">    <span class="keyword">if</span>(c-&gt;spd.<span class="keyword">this</span>.xauth_server || c-&gt;spd.<span class="keyword">this</span>.xauth_client)</span><br><span class="line">    &#123;</span><br><span class="line">        numvidtosend++;</span><br><span class="line">    &#125;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line">    <span class="comment">/* Set up state */</span></span><br><span class="line"><span class="comment">// 新分配状态结构</span></span><br><span class="line">    md-&gt;st = st = new_state();</span><br><span class="line"><span class="meta">#<span class="meta-keyword">ifdef</span> XAUTH</span></span><br><span class="line">    passert(st-&gt;st_oakley.xauth == <span class="number">0</span>);</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line">    st-&gt;st_connection = c;</span><br><span class="line">    st-&gt;st_remoteaddr = md-&gt;sender;</span><br><span class="line">    st-&gt;st_remoteport = md-&gt;sender_port;</span><br><span class="line">    st-&gt;st_localaddr  = md-&gt;iface-&gt;ip_addr;</span><br><span class="line">    st-&gt;st_localport  = md-&gt;iface-&gt;port;</span><br><span class="line">    st-&gt;st_interface  = md-&gt;iface;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* IKE version numbers -- used mostly in logging */</span></span><br><span class="line">    st-&gt;st_ike_maj        = md-&gt;maj;</span><br><span class="line">    st-&gt;st_ike_min        = md-&gt;min;</span><br><span class="line"></span><br><span class="line">    set_cur_state(st);	<span class="comment">/* (caller will reset cur_state) */</span></span><br><span class="line">    st-&gt;st_try = <span class="number">0</span>;	<span class="comment">/* not our job to try again from start */</span></span><br><span class="line">    st-&gt;st_policy = c-&gt;policy &amp; ~POLICY_IPSEC_MASK;	<span class="comment">/* only as accurate as connection */</span></span><br><span class="line">    <span class="comment">// 状态类型为R0(接收到初始化包)</span></span><br><span class="line">    change_state(st, STATE_MAIN_R0);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 复制对方的cookie</span></span><br><span class="line">    <span class="built_in">memcpy</span>(st-&gt;st_icookie, md-&gt;hdr.isa_icookie, COOKIE_SIZE);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 生成本地的cookie</span></span><br><span class="line">    get_cookie(FALSE, st-&gt;st_rcookie, COOKIE_SIZE, &amp;md-&gt;sender);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 将新状态插入到状态哈希表</span></span><br><span class="line">    insert_state(st);	<span class="comment">/* needs cookies, connection, and msgid (0) */</span></span><br><span class="line"></span><br><span class="line">    st-&gt;st_doi = ISAKMP_DOI_IPSEC;</span><br><span class="line">    st-&gt;st_situation = SIT_IDENTITY_ONLY; <span class="comment">/* We only support this */</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">/* copy the quirks we might have accumulated */</span></span><br><span class="line">	<span class="comment">// 复制特殊标志</span></span><br><span class="line">    copy_quirks(&amp;st-&gt;quirks,&amp;md-&gt;quirks);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> ((c-&gt;kind == CK_INSTANCE) &amp;&amp; (c-&gt;spd.that.host_port_specific))</span><br><span class="line">    &#123;</span><br><span class="line">       openswan_log(<span class="string">&quot;responding to Main Mode from unknown peer %s:%u&quot;</span></span><br><span class="line">	    , ip_str(&amp;c-&gt;spd.that.host_addr), c-&gt;spd.that.host_port);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> <span class="keyword">if</span> (c-&gt;kind == CK_INSTANCE)</span><br><span class="line">    &#123;</span><br><span class="line">	openswan_log(<span class="string">&quot;responding to Main Mode from unknown peer %s&quot;</span></span><br><span class="line">	    , ip_str(&amp;c-&gt;spd.that.host_addr));</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">    &#123;</span><br><span class="line">	openswan_log(<span class="string">&quot;responding to Main Mode&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* parse_isakmp_sa also spits out a winning SA into our reply,</span></span><br><span class="line"><span class="comment">     * so we have to build our reply_stream and emit HDR before calling it.</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">/* HDR out.</span></span><br><span class="line"><span class="comment">     * We can&#x27;t leave this to comm_handle() because we must</span></span><br><span class="line"><span class="comment">     * fill in the cookie.</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">     <span class="comment">// 以下开始填充要发送的回应包信息</span></span><br><span class="line">     </span><br><span class="line">    zero(reply_buffer);</span><br><span class="line">    init_pbs(&amp;reply_stream, reply_buffer, <span class="keyword">sizeof</span>(reply_buffer), <span class="string">&quot;reply packet&quot;</span>);</span><br><span class="line">    &#123;</span><br><span class="line">      <span class="comment">// 填充ISAKMP头部</span></span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">isakmp_hdr</span> <span class="title">r_hdr</span> =</span> md-&gt;hdr;</span><br><span class="line"></span><br><span class="line">	r_hdr.isa_flags &amp;= ~ISAKMP_FLAG_COMMIT;	<span class="comment">/* we won&#x27;t ever turn on this bit */</span></span><br><span class="line">	<span class="built_in">memcpy</span>(r_hdr.isa_rcookie, st-&gt;st_rcookie, COOKIE_SIZE);</span><br><span class="line">	r_hdr.isa_np = ISAKMP_NEXT_SA;</span><br><span class="line">	<span class="keyword">if</span> (!out_struct(&amp;r_hdr, &amp;isakmp_hdr_desc, &amp;reply_stream, &amp;md-&gt;rbody))</span><br><span class="line">	    <span class="keyword">return</span> STF_INTERNAL_ERROR;</span><br><span class="line">    &#125;</span><br><span class="line">	</span><br><span class="line">    <span class="comment">// 填充SA 结构信息</span></span><br><span class="line">    <span class="comment">/* start of SA out */</span></span><br><span class="line">    &#123;</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">isakmp_sa</span> <span class="title">r_sa</span> =</span> sa_pd-&gt;payload.sa;</span><br><span class="line"></span><br><span class="line">	<span class="comment">/* if we to send any VID, then set the NEXT payload correctly */</span></span><br><span class="line">	r_sa.isasa_np = numvidtosend ? ISAKMP_NEXT_VID : ISAKMP_NEXT_NONE;</span><br><span class="line">	<span class="keyword">if</span> (!out_struct(&amp;r_sa, &amp;isakmp_sa_desc, &amp;md-&gt;rbody, &amp;r_sa_pbs))</span><br><span class="line">	    <span class="keyword">return</span> STF_INTERNAL_ERROR;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* SA body in and out */</span></span><br><span class="line">	<span class="comment">/*解析对方的SA,根据他的建议载荷来确定本地是否支持，如果支持则回复支持的算法信息，并构建应答SA*/</span></span><br><span class="line">    RETURN_STF_FAILURE(parse_isakmp_sa_body(&amp;sa_pd-&gt;pbs, &amp;sa_pd-&gt;payload.sa</span><br><span class="line">					    , &amp;r_sa_pbs, FALSE, st));</span><br><span class="line"></span><br><span class="line">	<span class="comment">/*填充VID*/</span></span><br><span class="line">    <span class="keyword">if</span> (SEND_PLUTO_VID || openpgp_peer)</span><br><span class="line">    &#123;</span><br><span class="line">	<span class="keyword">char</span> *vendorid = (openpgp_peer) ?</span><br><span class="line">	    pgp_vendorid : pluto_vendorid;</span><br><span class="line"></span><br><span class="line">	next = --numvidtosend ? ISAKMP_NEXT_VID : ISAKMP_NEXT_NONE;</span><br><span class="line">	<span class="keyword">if</span> (!out_generic_raw(next, &amp;isakmp_vendor_id_desc, &amp;md-&gt;rbody</span><br><span class="line">			     , vendorid, <span class="built_in">strlen</span>(vendorid), <span class="string">&quot;Vendor ID&quot;</span>))</span><br><span class="line">	    <span class="keyword">return</span> STF_INTERNAL_ERROR;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/*</span></span><br><span class="line"><span class="comment">     * NOW SEND VENDOR ID payloads</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">	<span class="comment">/*填充DPD*/</span></span><br><span class="line">    <span class="comment">/* Announce our ability to do RFC 3706 Dead Peer Detection */</span></span><br><span class="line">    next = --numvidtosend ? ISAKMP_NEXT_VID : ISAKMP_NEXT_NONE;</span><br><span class="line">    <span class="keyword">if</span>( !out_vid(next, &amp;md-&gt;rbody, VID_MISC_DPD))</span><br><span class="line">      <span class="keyword">return</span> STF_INTERNAL_ERROR;</span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">ifdef</span> XAUTH</span></span><br><span class="line">    <span class="comment">/* If XAUTH is required, insert here Vendor ID */</span></span><br><span class="line">    <span class="keyword">if</span>(c-&gt;spd.<span class="keyword">this</span>.xauth_server || c-&gt;spd.<span class="keyword">this</span>.xauth_client)</span><br><span class="line">    &#123;</span><br><span class="line">	    next = --numvidtosend ? ISAKMP_NEXT_VID : ISAKMP_NEXT_NONE;</span><br><span class="line">	    <span class="keyword">if</span> (!out_vendorid(next, &amp;md-&gt;rbody, VID_MISC_XAUTH))</span><br><span class="line">	       <span class="keyword">return</span> STF_INTERNAL_ERROR;</span><br><span class="line">    &#125;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">ifdef</span> NAT_TRAVERSAL</span></span><br><span class="line">    DBG(DBG_NATT, DBG_log(<span class="string">&quot;sender checking NAT-T: %d and %d&quot;</span></span><br><span class="line">				, nat_traversal_enabled</span><br><span class="line">				, md-&gt;quirks.nat_traversal_vid));</span><br><span class="line">   <span class="comment">/*填充NAT-T的VID*/</span></span><br><span class="line">    <span class="keyword">if</span> (md-&gt;quirks.nat_traversal_vid &amp;&amp; nat_traversal_enabled) &#123;</span><br><span class="line"></span><br><span class="line">        next = --numvidtosend ? ISAKMP_NEXT_VID : ISAKMP_NEXT_NONE;</span><br><span class="line">	<span class="comment">/* reply if NAT-Traversal draft is supported */</span></span><br><span class="line">	<span class="comment">/*nat_traversal_vid_to_method:将VID转换为对应的标准*/</span></span><br><span class="line">	st-&gt;hidden_variables.st_nat_traversal = nat_traversal_vid_to_method(md-&gt;quirks.nat_traversal_vid);</span><br><span class="line">	<span class="comment">/*填充VID载荷，这里的NAT-T VID选择的是对方发来的最大的NAT-T 的VID,也就是说选用最新的NAT-T标准*/</span></span><br><span class="line">	<span class="keyword">if</span> ((st-&gt;hidden_variables.st_nat_traversal) &amp;&amp; (!out_vendorid(next,</span><br><span class="line">	    &amp;md-&gt;rbody, md-&gt;quirks.nat_traversal_vid))) &#123;</span><br><span class="line">	    <span class="keyword">return</span> STF_INTERNAL_ERROR;</span><br><span class="line">	&#125;</span><br><span class="line">    &#125;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">ifdef</span> DEBUG</span></span><br><span class="line">    <span class="comment">/* if we are not 0 then something went very wrong above */</span></span><br><span class="line">    <span class="keyword">if</span>(numvidtosend != <span class="number">0</span>) &#123;</span><br><span class="line">	openswan_log(<span class="string">&quot;payload alignment problem please check the code in main_inI1_outR1 (num=%d)&quot;</span>, numvidtosend);</span><br><span class="line">    &#125;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line"><span class="comment">/*应答报文封装完毕，填充长度字段*/</span></span><br><span class="line">    close_message(&amp;md-&gt;rbody);</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* save initiator SA for HASH */</span></span><br><span class="line">    clonereplacechunk(st-&gt;st_p1isa, sa_pd-&gt;pbs.start, pbs_room(&amp;sa_pd-&gt;pbs), <span class="string">&quot;sa in main_inI1_outR1()&quot;</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> STF_OK;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="4-parse-isakmp-sa-body-源码"><a href="#4-parse-isakmp-sa-body-源码" class="headerlink" title="4. parse_isakmp_sa_body()源码"></a>4. <code>parse_isakmp_sa_body()源码</code></h3><p>暂略。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/blogs/tags/ipsec/" rel="tag"># IPSec</a>
+              <a href="/blogs/tags/openswan/" rel="tag"># openswan</a>
+              <a href="/blogs/tags/VPN/" rel="tag"># VPN</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/blogs/2021/11/20/%E4%B8%BB%E6%A8%A1%E5%BC%8F%E7%AC%AC%E5%85%AD%E5%8C%85(%E6%94%B6%E5%8C%85)%EF%BC%9Amain_inR3/" rel="prev" title="主模式第六包(收包)：main_inR3">
+      <i class="fa fa-chevron-left"></i> 主模式第六包(收包)：main_inR3
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/blogs/2021/11/20/%E4%B8%BB%E6%A8%A1%E5%BC%8F%E7%AC%AC%E4%B8%80%E5%8C%85%EF%BC%9Amain_outI1()/" rel="next" title="主模式第一包：main_outI1()">
+      主模式第一包：main_outI1() <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E5%BA%8F%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">1. 序言</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-main-inI1-outR1-%E5%A4%84%E7%90%86%E6%B5%81%E7%A8%8B%E5%9B%BE"><span class="nav-number">1.1.</span> <span class="nav-text">2. main_inI1_outR1()处理流程图</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-main-inI1-outR1-%E6%BA%90%E7%A0%81"><span class="nav-number">1.2.</span> <span class="nav-text">3. main_inI1_outR1()源码</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-parse-isakmp-sa-body-%E6%BA%90%E7%A0%81"><span class="nav-number">1.3.</span> <span class="nav-text">4. parse_isakmp_sa_body()源码</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="叨陪鲤"
+      src="/blogs/images/me.jpg">
+  <p class="site-author-name" itemprop="name">叨陪鲤</p>
+  <div class="site-description" itemprop="description">他日趋庭，叨陪鲤对</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/blogs/archives/">
+        
+          <span class="site-state-item-count">14</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/blogs/categories/">
+        <span class="site-state-item-count">3</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/blogs/tags/">
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div>
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<span id="busuanzi_container_site_pv" style='display:none'>
+    本站总访问量 <span id="busuanzi_value_site_pv"></span> 次
+    <span class="post-meta-divider">|</span>
+</span>
+<span id="busuanzi_container_site_uv" style='display:none'>
+    有<span id="busuanzi_value_site_uv"></span>人看过我的博客啦
+</span>
+</div>
+
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">叨陪鲤</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> 强力驱动
+  </div>
+
+
+    <script async src="//dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+        
+<div class="busuanzi-count">
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/blogs/lib/anime.min.js"></script>
+  <script src="/blogs/lib/pjax/pjax.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="/blogs/lib/velocity/velocity.min.js"></script>
+  <script src="/blogs/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/blogs/js/utils.js"></script>
+
+<script src="/blogs/js/motion.js"></script>
+
+
+<script src="/blogs/js/schemes/muse.js"></script>
+
+
+<script src="/blogs/js/next-boot.js"></script>
+
+  <script>
+var pjax = new Pjax({
+  selectors: [
+    'head title',
+    '#page-configurations',
+    '.content-wrap',
+    '.post-toc-wrap',
+    '.languages',
+    '#pjax'
+  ],
+  switches: {
+    '.post-toc-wrap': Pjax.switches.innerHTML
+  },
+  analytics: false,
+  cacheBust: false,
+  scrollTo : !CONFIG.bookmark.enable
+});
+
+window.addEventListener('pjax:success', () => {
+  document.querySelectorAll('script[data-pjax], script#page-configurations, #pjax script').forEach(element => {
+    var code = element.text || element.textContent || element.innerHTML || '';
+    var parent = element.parentNode;
+    parent.removeChild(element);
+    var script = document.createElement('script');
+    if (element.id) {
+      script.id = element.id;
+    }
+    if (element.className) {
+      script.className = element.className;
+    }
+    if (element.type) {
+      script.type = element.type;
+    }
+    if (element.src) {
+      script.src = element.src;
+      // Force synchronous loading of peripheral JS.
+      script.async = false;
+    }
+    if (element.dataset.pjax !== undefined) {
+      script.dataset.pjax = '';
+    }
+    if (code !== '') {
+      script.appendChild(document.createTextNode(code));
+    }
+    parent.appendChild(script);
+  });
+  NexT.boot.refresh();
+  // Define Motion Sequence & Bootstrap Motion.
+  if (CONFIG.motion.enable) {
+    NexT.motion.integrator
+      .init()
+      .add(NexT.motion.middleWares.subMenu)
+      .add(NexT.motion.middleWares.postList)
+      .bootstrap();
+  }
+  NexT.utils.updateSidebarPosition();
+});
+</script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/blogs/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <div id="pjax">
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('[object Object]', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'MQdIgAGKML1LrVfkG1rbQUgO-gzGzoHsz',
+      appKey     : '3ECTEO4bp11EiKGpp4bTd07P',
+      placeholder: "欢迎留言交流学习！",
+      avatar     : 'robohash',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : 'en, zh-cn' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+    </div>
+</body>
+</html>

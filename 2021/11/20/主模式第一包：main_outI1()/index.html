@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/blogs/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/blogs/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/blogs/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/blogs/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/blogs/css/main.css">
+
+
+<link rel="stylesheet" href="/blogs/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":".github.io","root":"/blogs/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"always","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"buttons","active":"valine","storage":true,"lazyload":false,"nav":null,"activeClass":"valine"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="1. 序言main_outI1()作为主模式主动发起连接请求的核心处理函数，我们可以通过学习该函数的处理流程来探究openswan中报文封装的基本思想。如果之前没有学习基本的函数接口(如in_struct, out_struct, out_sa等)，那么直接学习main_outI1()流程是比较困难的。如果想快速学习这几个函数接口，可以查看我先前的文章，我把需要的基本知识、思想等做了基本介绍，看完">
+<meta property="og:type" content="article">
+<meta property="og:title" content="主模式第一包：main_outI1()">
+<meta property="og:url" content="https://.github.io/blogs/2021/11/20/%E4%B8%BB%E6%A8%A1%E5%BC%8F%E7%AC%AC%E4%B8%80%E5%8C%85%EF%BC%9Amain_outI1()/index.html">
+<meta property="og:site_name" content="遇见你是我最美丽的意外">
+<meta property="og:description" content="1. 序言main_outI1()作为主模式主动发起连接请求的核心处理函数，我们可以通过学习该函数的处理流程来探究openswan中报文封装的基本思想。如果之前没有学习基本的函数接口(如in_struct, out_struct, out_sa等)，那么直接学习main_outI1()流程是比较困难的。如果想快速学习这几个函数接口，可以查看我先前的文章，我把需要的基本知识、思想等做了基本介绍，看完">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://raw.githubusercontent.com/Top-Fish/PhotoRepository/main/img/SSL-TLS/20211120204802.png">
+<meta property="og:image" content="f:%5C%E9%9A%8F%E7%AC%94%5Copenswan%5C%E4%B8%BB%E6%A8%A1%E5%BC%8F%E7%AC%AC%E4%B8%80%E5%8C%85%EF%BC%9Amain_outI1().assets%5Cimage-20200520000233483.png">
+<meta property="article:published_time" content="2021-11-20T13:28:38.000Z">
+<meta property="article:modified_time" content="2021-11-20T14:46:07.771Z">
+<meta property="article:author" content="叨陪鲤">
+<meta property="article:tag" content="IPSec">
+<meta property="article:tag" content="openswan">
+<meta property="article:tag" content="VPN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/Top-Fish/PhotoRepository/main/img/SSL-TLS/20211120204802.png">
+
+<link rel="canonical" href="https://.github.io/blogs/2021/11/20/%E4%B8%BB%E6%A8%A1%E5%BC%8F%E7%AC%AC%E4%B8%80%E5%8C%85%EF%BC%9Amain_outI1()/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>主模式第一包：main_outI1() | 遇见你是我最美丽的意外</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/blogs/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">遇见你是我最美丽的意外</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">红红火火恍恍惚惚或</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-主页">
+
+    <a href="/blogs/" rel="section"><i class="fa fa-home fa-fw"></i>主页</a>
+
+  </li>
+        <li class="menu-item menu-item-标签">
+
+    <a href="/blogs/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-分类">
+
+    <a href="/blogs/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/blogs/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://.github.io/blogs/2021/11/20/%E4%B8%BB%E6%A8%A1%E5%BC%8F%E7%AC%AC%E4%B8%80%E5%8C%85%EF%BC%9Amain_outI1()/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/blogs/images/me.jpg">
+      <meta itemprop="name" content="叨陪鲤">
+      <meta itemprop="description" content="他日趋庭，叨陪鲤对">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="遇见你是我最美丽的意外">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          主模式第一包：main_outI1()
+        </h1>
+
+        <div class="post-meta">
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2021-11-20 21:28:38 / 修改时间：22:46:07" itemprop="dateCreated datePublished" datetime="2021-11-20T21:28:38+08:00">2021-11-20</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/blogs/categories/ipsec/" itemprop="url" rel="index"><span itemprop="name">IPSecVPN</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/blogs/categories/ipsec/openswan/" itemprop="url" rel="index"><span itemprop="name">openswan</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/blogs/2021/11/20/%E4%B8%BB%E6%A8%A1%E5%BC%8F%E7%AC%AC%E4%B8%80%E5%8C%85%EF%BC%9Amain_outI1()/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/blogs/2021/11/20/%E4%B8%BB%E6%A8%A1%E5%BC%8F%E7%AC%AC%E4%B8%80%E5%8C%85%EF%BC%9Amain_outI1()/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="1-序言"><a href="#1-序言" class="headerlink" title="1. 序言"></a>1. 序言</h2><p><code>main_outI1()</code>作为主模式主动发起连接请求的核心处理函数，我们可以通过学习该函数的处理流程来探究openswan中报文封装的基本思想。如果之前没有学习基本的函数接口(如in_struct, out_struct, out_sa等)，那么直接学习<code>main_outI1()</code>流程是比较困难的。如果想快速学习这几个函数接口，可以查看我先前的文章，我把需要的基本知识、思想等做了基本介绍，看完那几个接口再来学习此后的ISAKMP协商流程会容易很多，起到事半功倍的效果。</p>
+<span id="more"></span>
+<p>ISAKMP协商报文的处理流程都比较复杂，一个函数有几百行都是很常见的，因此个人学习期间难免有遗漏和理解错误的地方，请大家多多批评指正。</p>
+<h2 id="2-main-outI1-流程图"><a href="#2-main-outI1-流程图" class="headerlink" title="2. main_outI1()流程图"></a>2. main_outI1()流程图</h2><p>下面两个流程图中主要描述了三个函数的处理流程，后面我会分别附上这三个函数的源码信息。</p>
+<p><img src="https://raw.githubusercontent.com/Top-Fish/PhotoRepository/main/img/SSL-TLS/20211120204802.png" alt="main_outI1"></p>
+<p><img src="F:%5C%E9%9A%8F%E7%AC%94%5Copenswan%5C%E4%B8%BB%E6%A8%A1%E5%BC%8F%E7%AC%AC%E4%B8%80%E5%8C%85%EF%BC%9Amain_outI1().assets%5Cimage-20200520000233483.png" alt="out_sa处理流程"></p>
+<h2 id="3-main-outI1-源码注释"><a href="#3-main-outI1-源码注释" class="headerlink" title="3. main_outI1()源码注释"></a>3. main_outI1()源码注释</h2><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">stf_status</span></span><br><span class="line"><span class="function"><span class="title">main_outI1</span><span class="params">(<span class="keyword">int</span> whack_sock</span></span></span><br><span class="line"><span class="params"><span class="function">	   , struct connection *c</span></span></span><br><span class="line"><span class="params"><span class="function">	   , struct state *predecessor</span></span></span><br><span class="line"><span class="params"><span class="function">           , <span class="keyword">so_serial_t</span>  *newstateno</span></span></span><br><span class="line"><span class="params"><span class="function">	   , <span class="keyword">lset_t</span> policy</span></span></span><br><span class="line"><span class="params"><span class="function">	   , <span class="keyword">unsigned</span> <span class="keyword">long</span> <span class="keyword">try</span></span></span></span><br><span class="line"><span class="params"><span class="function">	   , <span class="keyword">enum</span> crypto_importance importance</span></span></span><br><span class="line"><span class="params"><span class="function">	   , struct xfrm_user_sec_ctx_ike * uctx</span></span></span><br><span class="line"><span class="params"><span class="function">	   )</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">state</span> *<span class="title">st</span> =</span> new_state();<span class="comment">/*创建一个新的状态*/</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">msg_digest</span> <span class="title">md</span>;</span>   <span class="comment">/* use reply/rbody found inside */</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">int</span> numvidtosend = <span class="number">1</span>;  <span class="comment">/* we always send DPD VID */</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">ifdef</span> NAT_TRAVERSAL</span></span><br><span class="line">    <span class="keyword">if</span> (nat_traversal_enabled) &#123;</span><br><span class="line">	numvidtosend++;</span><br><span class="line">    &#125;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">if</span> SEND_PLUTO_VID || defined(openpgp_peer)</span></span><br><span class="line">    numvidtosend++;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">ifdef</span> XAUTH</span></span><br><span class="line">    <span class="keyword">if</span>(c-&gt;spd.<span class="keyword">this</span>.xauth_client || c-&gt;spd.<span class="keyword">this</span>.xauth_server) &#123;</span><br><span class="line">	numvidtosend++;</span><br><span class="line">    &#125;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line"><span class="comment">/*统计VID个数*/</span></span><br><span class="line">    <span class="comment">/* set up new state */</span><span class="comment">/*根据对端IP地址信息生成一个新的cookie*/</span></span><br><span class="line">    get_cookie(TRUE, st-&gt;st_icookie, COOKIE_SIZE, &amp;c-&gt;spd.that.host_addr);</span><br><span class="line"></span><br><span class="line">   <span class="comment">/*初始化新的state结构*/</span></span><br><span class="line">    initialize_new_state(st, c, policy, <span class="keyword">try</span>, whack_sock, importance);</span><br><span class="line">	</span><br><span class="line">    <span class="keyword">if</span>(newstateno) *newstateno = st-&gt;st_serialno;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* IKE version numbers -- used mostly in logging */</span></span><br><span class="line">    st-&gt;st_ike_maj        = IKEv1_MAJOR_VERSION;</span><br><span class="line">    st-&gt;st_ike_min        = IKEv1_MINOR_VERSION;</span><br><span class="line"></span><br><span class="line">    change_state(st, STATE_MAIN_I1);<span class="comment">/*设置当前的状态为STATE_MAIN_I1*/</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (HAS_IPSEC_POLICY(policy))</span><br><span class="line">	add_pending(dup_any(whack_sock), st, c, policy, <span class="number">1</span></span><br><span class="line">	    , predecessor == <span class="literal">NULL</span>? SOS_NOBODY : predecessor-&gt;st_serialno</span><br><span class="line">	    , uctx</span><br><span class="line">                    );</span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">ifdef</span> HAVE_LABELED_IPSEC</span></span><br><span class="line">    <span class="comment">/*For main modes states, sec ctx is always null*/</span></span><br><span class="line">    st-&gt;sec_ctx = <span class="literal">NULL</span>;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (predecessor == <span class="literal">NULL</span>)</span><br><span class="line">	openswan_log(<span class="string">&quot;initiating Main Mode&quot;</span>);</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">	openswan_log(<span class="string">&quot;initiating Main Mode to replace #%lu&quot;</span>, predecessor-&gt;st_serialno);</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* set up reply */</span></span><br><span class="line">    zero(reply_buffer);<span class="comment">/*初始化应答报文(发送的报文)的结构*/</span></span><br><span class="line">    init_pbs(&amp;reply_stream, reply_buffer, <span class="keyword">sizeof</span>(reply_buffer), <span class="string">&quot;reply packet&quot;</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* HDR out */</span></span><br><span class="line">    &#123;<span class="comment">/*添加isakmp头部信息*/</span></span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">isakmp_hdr</span> <span class="title">hdr</span>;</span></span><br><span class="line"></span><br><span class="line">	zero(&amp;hdr);	<span class="comment">/* default to 0 */</span></span><br><span class="line">	hdr.isa_version = ISAKMP_MAJOR_VERSION &lt;&lt; ISA_MAJ_SHIFT | ISAKMP_MINOR_VERSION;</span><br><span class="line">	hdr.isa_np = ISAKMP_NEXT_SA;</span><br><span class="line">	hdr.isa_xchg = ISAKMP_XCHG_IDPROT;</span><br><span class="line">	<span class="built_in">memcpy</span>(hdr.isa_icookie, st-&gt;st_icookie, COOKIE_SIZE);</span><br><span class="line">	<span class="comment">/* R-cookie, flags and MessageID are left zero */</span></span><br><span class="line">	<span class="comment">/*长度字段最后设置: close_output_pbs(&amp;reply_stream);*/</span></span><br><span class="line">	<span class="keyword">if</span> (!out_struct(&amp;hdr, &amp;isakmp_hdr_desc, &amp;reply_stream, &amp;md.rbody))</span><br><span class="line">	&#123;</span><br><span class="line">	    reset_cur_state();</span><br><span class="line">	    <span class="keyword">return</span> STF_INTERNAL_ERROR;</span><br><span class="line">	&#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* SA out */</span></span><br><span class="line">    &#123;<span class="comment">/************封装SA载荷**************/</span></span><br><span class="line">	u_char *sa_start = md.rbody.cur;</span><br><span class="line">	<span class="keyword">int</span>    policy_index = POLICY_ISAKMP(policy</span><br><span class="line">					    , c-&gt;spd.<span class="keyword">this</span>.xauth_server</span><br><span class="line">					    , c-&gt;spd.<span class="keyword">this</span>.xauth_client);</span><br><span class="line"></span><br><span class="line">	<span class="comment">/* if we  have an OpenPGP certificate we assume an</span></span><br><span class="line"><span class="comment">	 * OpenPGP peer and have to send the Vendor ID</span></span><br><span class="line"><span class="comment">	 */</span></span><br><span class="line">	 <span class="comment">/*如果存在VID，则需要设置下一载荷的值*/</span></span><br><span class="line">	<span class="keyword">int</span> np = numvidtosend &gt; <span class="number">0</span> ? ISAKMP_NEXT_VID : ISAKMP_NEXT_NONE;</span><br><span class="line">	<span class="keyword">if</span> (!out_sa(&amp;md.rbody</span><br><span class="line">		    , &amp;oakley_sadb[policy_index], st, TRUE, FALSE, np))</span><br><span class="line">	&#123;</span><br><span class="line">	    openswan_log(<span class="string">&quot;outsa fail&quot;</span>);</span><br><span class="line">	    reset_cur_state();</span><br><span class="line">	    <span class="keyword">return</span> STF_INTERNAL_ERROR;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">/* save initiator SA for later HASH */</span></span><br><span class="line">	passert(st-&gt;st_p1isa.ptr == <span class="literal">NULL</span>);	<span class="comment">/* no leak!  (MUST be first time) */</span></span><br><span class="line">	clonetochunk(st-&gt;st_p1isa, sa_start, md.rbody.cur - sa_start</span><br><span class="line">	    , <span class="string">&quot;sa in main_outI1&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (SEND_PLUTO_VID || c-&gt;spd.<span class="keyword">this</span>.cert.type == CERT_PGP)</span><br><span class="line">    &#123;</span><br><span class="line">	<span class="keyword">char</span> *vendorid = (c-&gt;spd.<span class="keyword">this</span>.cert.type == CERT_PGP) ?</span><br><span class="line">	    pgp_vendorid : pluto_vendorid;</span><br><span class="line">	<span class="keyword">int</span> np = --numvidtosend &gt; <span class="number">0</span> ? ISAKMP_NEXT_VID : ISAKMP_NEXT_NONE;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> (!out_generic_raw(np, &amp;isakmp_vendor_id_desc, &amp;md.rbody</span><br><span class="line">			     , vendorid, <span class="built_in">strlen</span>(vendorid), <span class="string">&quot;Vendor ID&quot;</span>))</span><br><span class="line">	    <span class="keyword">return</span> STF_INTERNAL_ERROR;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* Send DPD VID */</span></span><br><span class="line">    &#123;</span><br><span class="line">	<span class="keyword">int</span> np = --numvidtosend &gt; <span class="number">0</span> ? ISAKMP_NEXT_VID : ISAKMP_NEXT_NONE;</span><br><span class="line">	<span class="keyword">if</span>(!out_vid(np, &amp;md.rbody, VID_MISC_DPD)) &#123;</span><br><span class="line">	    reset_cur_state();</span><br><span class="line">	    <span class="keyword">return</span> STF_INTERNAL_ERROR;</span><br><span class="line">	&#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">ifdef</span> NAT_TRAVERSAL</span></span><br><span class="line">    DBG(DBG_NATT, DBG_log(<span class="string">&quot;nat traversal enabled: %d&quot;</span></span><br><span class="line">			  , nat_traversal_enabled));</span><br><span class="line">    <span class="keyword">if</span> (nat_traversal_enabled) &#123;</span><br><span class="line">	<span class="keyword">int</span> np = --numvidtosend &gt; <span class="number">0</span> ? ISAKMP_NEXT_VID : ISAKMP_NEXT_NONE;</span><br><span class="line"></span><br><span class="line">	<span class="comment">/* Add supported NAT-Traversal VID */</span></span><br><span class="line">	<span class="keyword">if</span> (!nat_traversal_insert_vid(np, &amp;md.rbody, st)) &#123;</span><br><span class="line">	    reset_cur_state();</span><br><span class="line">	    <span class="keyword">return</span> STF_INTERNAL_ERROR;</span><br><span class="line">	&#125;</span><br><span class="line">    &#125;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">ifdef</span> XAUTH</span></span><br><span class="line">    <span class="keyword">if</span>(c-&gt;spd.<span class="keyword">this</span>.xauth_client || c-&gt;spd.<span class="keyword">this</span>.xauth_server) &#123;</span><br><span class="line">	<span class="keyword">int</span> np = --numvidtosend &gt; <span class="number">0</span> ? ISAKMP_NEXT_VID : ISAKMP_NEXT_NONE;</span><br><span class="line">	<span class="keyword">if</span>(!out_vid(np, &amp;md.rbody, VID_MISC_XAUTH)) &#123;</span><br><span class="line">	    reset_cur_state();</span><br><span class="line">	    <span class="keyword">return</span> STF_INTERNAL_ERROR;</span><br><span class="line">	&#125;</span><br><span class="line">    &#125;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">ifdef</span> DEBUG</span></span><br><span class="line">    <span class="comment">/* if we are not 0 then something went very wrong above */</span></span><br><span class="line">    <span class="keyword">if</span>(numvidtosend != <span class="number">0</span>) &#123;</span><br><span class="line">	openswan_log(<span class="string">&quot;payload alignment problem please check the code in main_inR1_outR2 (num=%d)&quot;</span>, numvidtosend);</span><br><span class="line">    &#125;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line"></span><br><span class="line">    close_message(&amp;md.rbody);</span><br><span class="line">    close_output_pbs(&amp;reply_stream);</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* let TCL hack it before we mark the length and copy it */</span></span><br><span class="line">    TCLCALLOUT(<span class="string">&quot;avoidEmitting&quot;</span>, st, st-&gt;st_connection, &amp;md);</span><br><span class="line">    clonetochunk(st-&gt;st_tpacket, reply_stream.start, pbs_offset(&amp;reply_stream)</span><br><span class="line">	, <span class="string">&quot;reply packet for main_outI1&quot;</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* Transmit */</span></span><br><span class="line">    send_packet(st, <span class="string">&quot;main_outI1&quot;</span>, TRUE);</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* Set up a retransmission event, half a minute henceforth */</span></span><br><span class="line">    TCLCALLOUT(<span class="string">&quot;adjustTimers&quot;</span>, st, st-&gt;st_connection, &amp;md);</span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">ifdef</span> TPM</span></span><br><span class="line"> tpm_stolen:</span><br><span class="line"> tpm_ignore:</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line">    delete_event(st);</span><br><span class="line">    event_schedule(EVENT_RETRANSMIT, EVENT_RETRANSMIT_DELAY_0, st);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (predecessor != <span class="literal">NULL</span>)</span><br><span class="line">    &#123;</span><br><span class="line">	update_pending(predecessor, st);</span><br><span class="line">	whack_log(RC_NEW_STATE + STATE_MAIN_I1</span><br><span class="line">	    , <span class="string">&quot;%s: initiate, replacing #%lu&quot;</span></span><br><span class="line">	    , enum_name(&amp;state_names, st-&gt;st_state)</span><br><span class="line">	    , predecessor-&gt;st_serialno);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">    &#123;</span><br><span class="line">	whack_log(RC_NEW_STATE + STATE_MAIN_I1</span><br><span class="line">	    , <span class="string">&quot;%s: initiate&quot;</span>, enum_name(&amp;state_names, st-&gt;st_state));</span><br><span class="line">    &#125;</span><br><span class="line">    reset_cur_state();</span><br><span class="line">    <span class="keyword">return</span> STF_OK;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="4-out-sa-源码注释"><a href="#4-out-sa-源码注释" class="headerlink" title="4. out_sa()源码注释"></a>4. out_sa()源码注释</h2><p>略。此函数400多行，由于流程图上比较详细就不再列出。</p>
+<h3 id="5-oakley-alg-makedb-源码注释"><a href="#5-oakley-alg-makedb-源码注释" class="headerlink" title="5. oakley_alg_makedb()源码注释"></a>5. oakley_alg_makedb()源码注释</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br><span class="line">198</span><br><span class="line">199</span><br><span class="line">200</span><br><span class="line">201</span><br><span class="line">202</span><br><span class="line">203</span><br><span class="line">204</span><br><span class="line">205</span><br><span class="line">206</span><br><span class="line">207</span><br><span class="line">208</span><br><span class="line">209</span><br><span class="line">210</span><br><span class="line">211</span><br><span class="line">212</span><br><span class="line">213</span><br><span class="line">214</span><br><span class="line">215</span><br><span class="line">216</span><br><span class="line">217</span><br><span class="line">218</span><br><span class="line">219</span><br><span class="line">220</span><br><span class="line">221</span><br><span class="line">222</span><br><span class="line">223</span><br><span class="line">224</span><br><span class="line">225</span><br><span class="line">226</span><br><span class="line">227</span><br><span class="line">228</span><br><span class="line">229</span><br><span class="line">230</span><br><span class="line">231</span><br><span class="line">232</span><br><span class="line">233</span><br><span class="line">234</span><br><span class="line">235</span><br><span class="line">236</span><br><span class="line">237</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * 	Create an OAKLEY proposal based on alg_info and policy</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * Note: maxtrans is an enum, not a count</span></span><br><span class="line"><span class="comment"> * 	Should probably be declared an enum at some point.</span></span><br><span class="line"><span class="comment"> * 	-1 - ???</span></span><br><span class="line"><span class="comment"> * 	 0 - No limit</span></span><br><span class="line"><span class="comment"> * 	 1 - One proposal - period</span></span><br><span class="line"><span class="comment"> * 	 2 - One DH group, take first DH group and ignore any that don&#x27;t match</span></span><br><span class="line"><span class="comment"> *根据配置的秘钥算法信息重新生成一个sadb信息</span></span><br><span class="line"><span class="comment"> *传入的sadb应该为固定的秘钥算法信息，因此需要根据策略来重新生成一个新的sadb</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function">struct db_sa *</span></span><br><span class="line"><span class="function"><span class="title">oakley_alg_makedb</span><span class="params">(struct alg_info_ike *ai</span></span></span><br><span class="line"><span class="params"><span class="function">		  , struct db_sa *base</span></span></span><br><span class="line"><span class="params"><span class="function">		  , <span class="keyword">int</span> maxtrans)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="comment">/* struct db_context inprog UNUSED; */</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">db_sa</span> *<span class="title">gsp</span> =</span> <span class="literal">NULL</span>;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">db_sa</span> *<span class="title">emp_sp</span> =</span> <span class="literal">NULL</span>;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">ike_info</span> *<span class="title">ike_info</span>;</span></span><br><span class="line">    <span class="keyword">unsigned</span> ealg, halg, modp, eklen=<span class="number">0</span>;</span><br><span class="line">    <span class="comment">/* Next two are for multiple proposals in agressive mode... */</span></span><br><span class="line">    <span class="keyword">unsigned</span> last_modp=<span class="number">0</span>, wrong_modp=<span class="number">0</span>;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">encrypt_desc</span> *<span class="title">enc_desc</span>;</span></span><br><span class="line">    <span class="keyword">int</span> transcnt = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">int</span> i;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/*</span></span><br><span class="line"><span class="comment">     * start by copying the proposal that would have been picked by</span></span><br><span class="line"><span class="comment">     * standard defaults.</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (!ai) &#123;</span><br><span class="line">	DBG(DBG_CRYPT,DBG_log(<span class="string">&quot;no IKE algorithms for this connection &quot;</span>));</span><br><span class="line"></span><br><span class="line">	<span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    gsp = <span class="literal">NULL</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/*</span></span><br><span class="line"><span class="comment">     * for each group, we will create a new proposal item, and then</span></span><br><span class="line"><span class="comment">     * append it to the list of transforms in the conjoint point.</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * when creating each item, we will use the first transform</span></span><br><span class="line"><span class="comment">     * from the base item as the template.</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    ALG_INFO_IKE_FOREACH(ai, ike_info, i) &#123;<span class="comment">//遍历策略中的算法信息</span></span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span>(ike_info-&gt;ike_default == FALSE) &#123;</span><br><span class="line">	    <span class="class"><span class="keyword">struct</span> <span class="title">db_attr</span>  *<span class="title">enc</span>, *<span class="title">hash</span>, *<span class="title">auth</span>, *<span class="title">grp</span>, *<span class="title">enc_keylen</span>, *<span class="title">new_auth</span>;</span></span><br><span class="line">	    <span class="class"><span class="keyword">struct</span> <span class="title">db_trans</span> *<span class="title">trans</span>;</span></span><br><span class="line">	    <span class="class"><span class="keyword">struct</span> <span class="title">db_prop</span>  *<span class="title">prop</span>;</span></span><br><span class="line">	    <span class="class"><span class="keyword">struct</span> <span class="title">db_prop_conj</span> *<span class="title">cprop</span>;</span></span><br><span class="line"></span><br><span class="line">		<span class="comment">/*获取到加密算法、哈希算法、认证算法、加密秘钥长度等信息*/</span></span><br><span class="line">	    ealg = ike_info-&gt;ike_ealg;</span><br><span class="line">	    halg = ike_info-&gt;ike_halg;</span><br><span class="line">	    modp = ike_info-&gt;ike_modp;</span><br><span class="line">	    eklen= ike_info-&gt;ike_eklen;</span><br><span class="line">		</span><br><span class="line"><span class="meta">#<span class="meta-keyword">if</span> 1  <span class="comment">/*判断这几个算法是否合法、是否存在等*/</span></span></span><br><span class="line">	    <span class="keyword">if</span> (!ike_alg_enc_present(ealg)) &#123;</span><br><span class="line">		DBG_log(<span class="string">&quot;oakley_alg_makedb() &quot;</span></span><br><span class="line">			<span class="string">&quot;ike enc ealg=%d not present&quot;</span>,</span><br><span class="line">			ealg);</span><br><span class="line">		<span class="keyword">continue</span>;</span><br><span class="line">	    &#125;</span><br><span class="line">	    <span class="keyword">if</span> (!ike_alg_hash_present(halg)) &#123;</span><br><span class="line">		DBG_log(<span class="string">&quot;oakley_alg_makedb() &quot;</span></span><br><span class="line">			<span class="string">&quot;ike hash halg=%d not present&quot;</span>,</span><br><span class="line">			halg);</span><br><span class="line">		<span class="keyword">continue</span>;</span><br><span class="line">	    &#125;</span><br><span class="line">	    enc_desc = ike_alg_get_encrypter(ealg);</span><br><span class="line"></span><br><span class="line">	    passert(enc_desc != <span class="literal">NULL</span>);</span><br><span class="line">	    <span class="keyword">if</span> (eklen	<span class="comment">/*秘钥长度是否符合要求*/</span></span><br><span class="line">		&amp;&amp; (eklen &lt; enc_desc-&gt;keyminlen</span><br><span class="line">		    || eklen &gt;  enc_desc-&gt;keymaxlen))</span><br><span class="line"></span><br><span class="line">		&#123;</span><br><span class="line">		    DBG_log(<span class="string">&quot;ike_alg_db_new() &quot;</span></span><br><span class="line">			    <span class="string">&quot;ealg=%d (specified) keylen:%d, &quot;</span></span><br><span class="line">			    <span class="string">&quot;not valid &quot;</span></span><br><span class="line">			    <span class="string">&quot;min=%d, max=%d&quot;</span></span><br><span class="line">			    , ealg</span><br><span class="line">			    , eklen</span><br><span class="line">			    , enc_desc-&gt;keyminlen</span><br><span class="line">			    , enc_desc-&gt;keymaxlen</span><br><span class="line">			    );</span><br><span class="line">		    <span class="keyword">continue</span>;</span><br><span class="line">		&#125;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line">	    <span class="comment">/* okay copy the basic item, and modify it. */</span></span><br><span class="line">	    <span class="keyword">if</span>(eklen &gt; <span class="number">0</span>)</span><br><span class="line">	    &#123;</span><br><span class="line">		emp_sp = sa_copy_sa(&amp;oakley_empty, <span class="number">0</span>);<span class="comment">/*重新分配一个新的描述信息*/</span></span><br><span class="line">		cprop = &amp;base-&gt;prop_conjs[<span class="number">0</span>];<span class="comment">/*从定义的描述信息中获取参数*/</span></span><br><span class="line">		prop = &amp;cprop-&gt;props[<span class="number">0</span>];<span class="comment">/*建议载荷*/</span></span><br><span class="line">		trans = &amp;prop-&gt;trans[<span class="number">0</span>];<span class="comment">/*变换载荷*/</span></span><br><span class="line">		new_auth = &amp;trans-&gt;attrs[<span class="number">2</span>];<span class="comment">/*属性载荷*/</span></span><br><span class="line"></span><br><span class="line">		cprop = &amp;emp_sp-&gt;prop_conjs[<span class="number">0</span>];</span><br><span class="line">		prop = &amp;cprop-&gt;props[<span class="number">0</span>];</span><br><span class="line">		trans = &amp;prop-&gt;trans[<span class="number">0</span>];</span><br><span class="line">		auth = &amp;trans-&gt;attrs[<span class="number">2</span>];</span><br><span class="line">		*auth = *new_auth;		<span class="comment">/*给新的描述结构中设置认证算法*/</span></span><br><span class="line">	    &#125;</span><br><span class="line">	    <span class="keyword">else</span></span><br><span class="line">		emp_sp = sa_copy_sa_first(base);</span><br><span class="line"></span><br><span class="line">	    passert(emp_sp-&gt;prop_conj_cnt == <span class="number">1</span>);</span><br><span class="line">	    cprop = &amp;emp_sp-&gt;prop_conjs[<span class="number">0</span>];</span><br><span class="line"></span><br><span class="line">	    passert(cprop-&gt;prop_cnt == <span class="number">1</span>);</span><br><span class="line">	    prop = &amp;cprop-&gt;props[<span class="number">0</span>];</span><br><span class="line"></span><br><span class="line">	    passert(prop-&gt;trans_cnt == <span class="number">1</span>);</span><br><span class="line">	    trans = &amp;prop-&gt;trans[<span class="number">0</span>];</span><br><span class="line"></span><br><span class="line">	    passert(trans-&gt;attr_cnt == <span class="number">4</span> || trans-&gt;attr_cnt == <span class="number">5</span>);</span><br><span class="line">	    enc  = &amp;trans-&gt;attrs[<span class="number">0</span>]; <span class="comment">/*加密*/</span></span><br><span class="line">	    hash = &amp;trans-&gt;attrs[<span class="number">1</span>];<span class="comment">/*哈希*/</span></span><br><span class="line">	    auth = &amp;trans-&gt;attrs[<span class="number">2</span>];<span class="comment">/*认证*/</span></span><br><span class="line">	    grp  = &amp;trans-&gt;attrs[<span class="number">3</span>];<span class="comment">/*DH组?*/</span></span><br><span class="line"></span><br><span class="line">	    <span class="keyword">if</span>(eklen &gt; <span class="number">0</span>) &#123;</span><br><span class="line">		enc_keylen = &amp;trans-&gt;attrs[<span class="number">4</span>];</span><br><span class="line">		enc_keylen-&gt;val = eklen;<span class="comment">/*设置加密算法长度*/</span></span><br><span class="line">	    &#125; <span class="keyword">else</span></span><br><span class="line">		trans-&gt;attr_cnt = <span class="number">4</span>;</span><br><span class="line"></span><br><span class="line">	    passert(enc-&gt;type.oakley == OAKLEY_ENCRYPTION_ALGORITHM);</span><br><span class="line">	    <span class="keyword">if</span>(ealg &gt; <span class="number">0</span>) &#123;</span><br><span class="line">		enc-&gt;val = ealg;<span class="comment">/*设置加密算法*/</span></span><br><span class="line">	    &#125;</span><br><span class="line"></span><br><span class="line">	    modp = ike_info-&gt;ike_modp;</span><br><span class="line">	    eklen= ike_info-&gt;ike_eklen;</span><br><span class="line"></span><br><span class="line">	    passert(hash-&gt;type.oakley == OAKLEY_HASH_ALGORITHM);</span><br><span class="line">	    <span class="keyword">if</span>(halg &gt; <span class="number">0</span>) &#123;</span><br><span class="line">		hash-&gt;val = halg;<span class="comment">/*设置哈希算法*/</span></span><br><span class="line">	    &#125;</span><br><span class="line"></span><br><span class="line">	    passert(auth-&gt;type.oakley == OAKLEY_AUTHENTICATION_METHOD);</span><br><span class="line">	    <span class="comment">/* no setting for auth type for IKE */</span></span><br><span class="line"></span><br><span class="line">	    passert(grp-&gt;type.oakley  == OAKLEY_GROUP_DESCRIPTION);</span><br><span class="line">	    <span class="keyword">if</span>(modp &gt; <span class="number">0</span>) &#123;</span><br><span class="line">		grp-&gt;val = modp;  <span class="comment">/*设置认证算法*/</span></span><br><span class="line">	    &#125;</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">	    emp_sp = sa_copy_sa(base, <span class="number">0</span>);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span>(maxtrans == <span class="number">1</span>) &#123;<span class="comment">/*最大变换载荷数*/</span></span><br><span class="line">            <span class="comment">/*</span></span><br><span class="line"><span class="comment">             *  We&#x27;re going to leave maxtrans == 1 alone in case there</span></span><br><span class="line"><span class="comment">             * really really is a case where we only want 1.</span></span><br><span class="line"><span class="comment">             */</span></span><br><span class="line"></span><br><span class="line">	    <span class="keyword">if</span>(transcnt == <span class="number">0</span>) &#123;</span><br><span class="line">		DBG(DBG_CONTROL, DBG_log(<span class="string">&quot;using transform (%d,%d,%d,%ld)&quot;</span></span><br><span class="line">					 , ike_info-&gt;ike_ealg</span><br><span class="line">					 , ike_info-&gt;ike_halg</span><br><span class="line">					 , ike_info-&gt;ike_modp</span><br><span class="line">					 , (<span class="keyword">long</span>)ike_info-&gt;ike_eklen));</span><br><span class="line">		<span class="keyword">if</span>(gsp) &#123;</span><br><span class="line">		    free_sa(gsp);</span><br><span class="line">		&#125;</span><br><span class="line">		gsp = emp_sp;</span><br><span class="line">	    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		free_sa(emp_sp);</span><br><span class="line">	    &#125;</span><br><span class="line"></span><br><span class="line">	    <span class="keyword">if</span>(transcnt &gt; <span class="number">0</span>) &#123;</span><br><span class="line">		<span class="keyword">if</span>(transcnt == <span class="number">1</span>) &#123;</span><br><span class="line">		    loglog(RC_LOG_SERIOUS</span><br><span class="line"></span><br><span class="line">			   , <span class="string">&quot;multiple transforms were set in aggressive mode. Only first one used.&quot;</span>);</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		loglog(RC_LOG_SERIOUS</span><br><span class="line">		       , <span class="string">&quot;transform (%d,%d,%d,%ld) ignored.&quot;</span></span><br><span class="line">		       , ike_info-&gt;ike_ealg</span><br><span class="line">		       , ike_info-&gt;ike_halg</span><br><span class="line">		       , ike_info-&gt;ike_modp</span><br><span class="line">		       , (<span class="keyword">long</span>)ike_info-&gt;ike_eklen);</span><br><span class="line">	    &#125;</span><br><span class="line"></span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="comment">/*</span></span><br><span class="line"><span class="comment">             * Now...  We&#x27;re allowing multiple proposals...  Are we allowing</span></span><br><span class="line"><span class="comment">             * multiple DH groups?</span></span><br><span class="line"><span class="comment">             */</span></span><br><span class="line"></span><br><span class="line">	    struct db_sa *<span class="keyword">new</span>;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span>(maxtrans == <span class="number">2</span> &amp;&amp; transcnt &gt; <span class="number">0</span> &amp;&amp; ike_info-&gt;ike_modp != last_modp ) &#123;</span><br><span class="line">                <span class="comment">/* Not good.</span></span><br><span class="line"><span class="comment">                 * Already got a DH group and this one doesn&#x27;t match */</span></span><br><span class="line">		<span class="keyword">if</span>(wrong_modp == <span class="number">0</span>) &#123;</span><br><span class="line">		    loglog(RC_LOG_SERIOUS</span><br><span class="line">			   , <span class="string">&quot;multiple DH groups were set in aggressive mode. Only first one used.&quot;</span>);</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		loglog(RC_LOG_SERIOUS</span><br><span class="line">		           , <span class="string">&quot;transform (%d,%d,%d,%ld) ignored.&quot;</span></span><br><span class="line">		           , ike_info-&gt;ike_ealg</span><br><span class="line">		           , ike_info-&gt;ike_halg</span><br><span class="line">		           , ike_info-&gt;ike_modp</span><br><span class="line">		           , (<span class="keyword">long</span>)ike_info-&gt;ike_eklen);</span><br><span class="line"></span><br><span class="line">                wrong_modp++;</span><br><span class="line"></span><br><span class="line">		free_sa(emp_sp);</span><br><span class="line">	    &#125; <span class="keyword">else</span> <span class="keyword">if</span>(gsp) &#123;</span><br><span class="line">	    <span class="comment">/* now merge emp_sa and gsp */</span></span><br><span class="line">		<span class="keyword">new</span> = sa_merge_proposals(gsp, emp_sp);<span class="comment">/*变换载荷合并*/</span></span><br><span class="line">		free_sa(gsp);</span><br><span class="line">		free_sa(emp_sp);</span><br><span class="line">		emp_sp = <span class="literal">NULL</span>;</span><br><span class="line">		gsp = <span class="keyword">new</span>;</span><br><span class="line">	    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		gsp = emp_sp;</span><br><span class="line">	    &#125;</span><br><span class="line">            last_modp = ike_info-&gt;ike_modp;</span><br><span class="line">	&#125;</span><br><span class="line">	transcnt++;</span><br><span class="line">    &#125;</span><br><span class="line">    gsp-&gt;parentSA = TRUE;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> gsp;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/blogs/tags/ipsec/" rel="tag"># IPSec</a>
+              <a href="/blogs/tags/openswan/" rel="tag"># openswan</a>
+              <a href="/blogs/tags/VPN/" rel="tag"># VPN</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/blogs/2021/11/20/%E4%B8%BB%E6%A8%A1%E5%BC%8F%E7%AC%AC%E4%BA%8C%E5%8C%85%EF%BC%9Amain_inI1_outR1()/" rel="prev" title="主模式第二包：main_inI1_outR1()">
+      <i class="fa fa-chevron-left"></i> 主模式第二包：main_inI1_outR1()
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/blogs/2021/11/20/%E4%B8%BB%E6%A8%A1%E5%BC%8F%E7%AC%AC%E4%B8%89%E5%8C%85%EF%BC%9Amain_inR1_outI2/" rel="next" title="主模式第三包：main_inR1_outI2">
+      主模式第三包：main_inR1_outI2 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E5%BA%8F%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">1. 序言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-main-outI1-%E6%B5%81%E7%A8%8B%E5%9B%BE"><span class="nav-number">2.</span> <span class="nav-text">2. main_outI1()流程图</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-main-outI1-%E6%BA%90%E7%A0%81%E6%B3%A8%E9%87%8A"><span class="nav-number">3.</span> <span class="nav-text">3. main_outI1()源码注释</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-out-sa-%E6%BA%90%E7%A0%81%E6%B3%A8%E9%87%8A"><span class="nav-number">4.</span> <span class="nav-text">4. out_sa()源码注释</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#5-oakley-alg-makedb-%E6%BA%90%E7%A0%81%E6%B3%A8%E9%87%8A"><span class="nav-number">4.1.</span> <span class="nav-text">5. oakley_alg_makedb()源码注释</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="叨陪鲤"
+      src="/blogs/images/me.jpg">
+  <p class="site-author-name" itemprop="name">叨陪鲤</p>
+  <div class="site-description" itemprop="description">他日趋庭，叨陪鲤对</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/blogs/archives/">
+        
+          <span class="site-state-item-count">14</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/blogs/categories/">
+        <span class="site-state-item-count">3</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/blogs/tags/">
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div>
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<span id="busuanzi_container_site_pv" style='display:none'>
+    本站总访问量 <span id="busuanzi_value_site_pv"></span> 次
+    <span class="post-meta-divider">|</span>
+</span>
+<span id="busuanzi_container_site_uv" style='display:none'>
+    有<span id="busuanzi_value_site_uv"></span>人看过我的博客啦
+</span>
+</div>
+
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">叨陪鲤</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> 强力驱动
+  </div>
+
+
+    <script async src="//dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+        
+<div class="busuanzi-count">
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/blogs/lib/anime.min.js"></script>
+  <script src="/blogs/lib/pjax/pjax.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="/blogs/lib/velocity/velocity.min.js"></script>
+  <script src="/blogs/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/blogs/js/utils.js"></script>
+
+<script src="/blogs/js/motion.js"></script>
+
+
+<script src="/blogs/js/schemes/muse.js"></script>
+
+
+<script src="/blogs/js/next-boot.js"></script>
+
+  <script>
+var pjax = new Pjax({
+  selectors: [
+    'head title',
+    '#page-configurations',
+    '.content-wrap',
+    '.post-toc-wrap',
+    '.languages',
+    '#pjax'
+  ],
+  switches: {
+    '.post-toc-wrap': Pjax.switches.innerHTML
+  },
+  analytics: false,
+  cacheBust: false,
+  scrollTo : !CONFIG.bookmark.enable
+});
+
+window.addEventListener('pjax:success', () => {
+  document.querySelectorAll('script[data-pjax], script#page-configurations, #pjax script').forEach(element => {
+    var code = element.text || element.textContent || element.innerHTML || '';
+    var parent = element.parentNode;
+    parent.removeChild(element);
+    var script = document.createElement('script');
+    if (element.id) {
+      script.id = element.id;
+    }
+    if (element.className) {
+      script.className = element.className;
+    }
+    if (element.type) {
+      script.type = element.type;
+    }
+    if (element.src) {
+      script.src = element.src;
+      // Force synchronous loading of peripheral JS.
+      script.async = false;
+    }
+    if (element.dataset.pjax !== undefined) {
+      script.dataset.pjax = '';
+    }
+    if (code !== '') {
+      script.appendChild(document.createTextNode(code));
+    }
+    parent.appendChild(script);
+  });
+  NexT.boot.refresh();
+  // Define Motion Sequence & Bootstrap Motion.
+  if (CONFIG.motion.enable) {
+    NexT.motion.integrator
+      .init()
+      .add(NexT.motion.middleWares.subMenu)
+      .add(NexT.motion.middleWares.postList)
+      .bootstrap();
+  }
+  NexT.utils.updateSidebarPosition();
+});
+</script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/blogs/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <div id="pjax">
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('[object Object]', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'MQdIgAGKML1LrVfkG1rbQUgO-gzGzoHsz',
+      appKey     : '3ECTEO4bp11EiKGpp4bTd07P',
+      placeholder: "欢迎留言交流学习！",
+      avatar     : 'robohash',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : 'en, zh-cn' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+    </div>
+</body>
+</html>

@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/blogs/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/blogs/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/blogs/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/blogs/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/blogs/css/main.css">
+
+
+<link rel="stylesheet" href="/blogs/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":".github.io","root":"/blogs/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"always","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"buttons","active":"valine","storage":true,"lazyload":false,"nav":null,"activeClass":"valine"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="1. 序言main_inI2_outR2()函数是ISAKMP协商过程中&#x3D;&#x3D;第四包的核心处理函数的入口&#x3D;&#x3D;，同时在此处理流程中已经获取到足够的隧道信息，可以生成需要的密钥信息。这里我们主要说明main_inI2_outR2的函数调用关系、处理流程以及对源码的注释分析，关于main_inI2_outR2的上下文环境暂不叙述，留给后面的文章进行更新。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="主模式第四包：main_inI2_outR2">
+<meta property="og:url" content="https://.github.io/blogs/2021/11/20/%E4%B8%BB%E6%A8%A1%E5%BC%8F%E7%AC%AC%E5%9B%9B%E5%8C%85%EF%BC%9Amain_inI2_outR2/index.html">
+<meta property="og:site_name" content="遇见你是我最美丽的意外">
+<meta property="og:description" content="1. 序言main_inI2_outR2()函数是ISAKMP协商过程中&#x3D;&#x3D;第四包的核心处理函数的入口&#x3D;&#x3D;，同时在此处理流程中已经获取到足够的隧道信息，可以生成需要的密钥信息。这里我们主要说明main_inI2_outR2的函数调用关系、处理流程以及对源码的注释分析，关于main_inI2_outR2的上下文环境暂不叙述，留给后面的文章进行更新。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://raw.githubusercontent.com/Top-Fish/PhotoRepository/main/img/SSL-TLS/20211120204827.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/Top-Fish/PhotoRepository/main/img/SSL-TLS/20211120204834.gif">
+<meta property="article:published_time" content="2021-11-20T13:28:38.000Z">
+<meta property="article:modified_time" content="2021-11-20T14:47:47.795Z">
+<meta property="article:author" content="叨陪鲤">
+<meta property="article:tag" content="IPSec">
+<meta property="article:tag" content="openswan">
+<meta property="article:tag" content="VPN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/Top-Fish/PhotoRepository/main/img/SSL-TLS/20211120204827.png">
+
+<link rel="canonical" href="https://.github.io/blogs/2021/11/20/%E4%B8%BB%E6%A8%A1%E5%BC%8F%E7%AC%AC%E5%9B%9B%E5%8C%85%EF%BC%9Amain_inI2_outR2/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>主模式第四包：main_inI2_outR2 | 遇见你是我最美丽的意外</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/blogs/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">遇见你是我最美丽的意外</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">红红火火恍恍惚惚或</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-主页">
+
+    <a href="/blogs/" rel="section"><i class="fa fa-home fa-fw"></i>主页</a>
+
+  </li>
+        <li class="menu-item menu-item-标签">
+
+    <a href="/blogs/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-分类">
+
+    <a href="/blogs/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/blogs/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://.github.io/blogs/2021/11/20/%E4%B8%BB%E6%A8%A1%E5%BC%8F%E7%AC%AC%E5%9B%9B%E5%8C%85%EF%BC%9Amain_inI2_outR2/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/blogs/images/me.jpg">
+      <meta itemprop="name" content="叨陪鲤">
+      <meta itemprop="description" content="他日趋庭，叨陪鲤对">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="遇见你是我最美丽的意外">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          主模式第四包：main_inI2_outR2
+        </h1>
+
+        <div class="post-meta">
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2021-11-20 21:28:38 / 修改时间：22:47:47" itemprop="dateCreated datePublished" datetime="2021-11-20T21:28:38+08:00">2021-11-20</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/blogs/categories/ipsec/" itemprop="url" rel="index"><span itemprop="name">IPSecVPN</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/blogs/categories/ipsec/openswan/" itemprop="url" rel="index"><span itemprop="name">openswan</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/blogs/2021/11/20/%E4%B8%BB%E6%A8%A1%E5%BC%8F%E7%AC%AC%E5%9B%9B%E5%8C%85%EF%BC%9Amain_inI2_outR2/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/blogs/2021/11/20/%E4%B8%BB%E6%A8%A1%E5%BC%8F%E7%AC%AC%E5%9B%9B%E5%8C%85%EF%BC%9Amain_inI2_outR2/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h3 id="1-序言"><a href="#1-序言" class="headerlink" title="1. 序言"></a>1. 序言</h3><p><code>main_inI2_outR2()</code>函数是ISAKMP协商过程中==第四包的核心处理函数的入口==，同时在此处理流程中已经获取到足够的隧道信息，可以生成需要的密钥信息。这里我们主要说明<code>main_inI2_outR2</code>的函数调用关系、处理流程以及对源码的注释分析，关于<code>main_inI2_outR2</code>的上下文环境暂不叙述，留给后面的文章进行更新。</p>
+<span id="more"></span>
+<p>ISAKMP协商报文的处理流程都比较复杂，此函数在协商的报文处理函数中比较复杂的，因此个人学习期间难免有遗漏和理解错误的地方，请大家多多批评指正。</p>
+<p>对于源码的学习，我并没有把每一行进行备注，而是将自己认为的关键点做了注释或者标注。</p>
+<h3 id="2-函数调用关系"><a href="#2-函数调用关系" class="headerlink" title="2.函数调用关系"></a>2.函数调用关系</h3><p>暂略。(此流程调用比较多，后面会在补充上)</p>
+<h3 id="3-第四个报文流程图"><a href="#3-第四个报文流程图" class="headerlink" title="3. 第四个报文流程图"></a>3. 第四个报文流程图</h3><p>第四个报文处理流程大致可以划分为四类功能：</p>
+<ul>
+<li><input checked="" disabled="" type="checkbox"> 解析收到的第三个报文内容</li>
+<li><input checked="" disabled="" type="checkbox"> 生成随机数(本段的KE和Nonce值)</li>
+<li><input checked="" disabled="" type="checkbox"> 构造应答报文</li>
+<li><input checked="" disabled="" type="checkbox"> 使用DH算法制作秘钥(三把钥匙)</li>
+</ul>
+<p>整理的处理流程如下：</p>
+<p><img src="https://raw.githubusercontent.com/Top-Fish/PhotoRepository/main/img/SSL-TLS/20211120204827.png" alt="image-20200522000821053"></p>
+<p>个人觉得这个流程做的还是很清晰和准确的(原谅我没有上色)<img src="" alt="img"></p>
+<p><img src="https://raw.githubusercontent.com/Top-Fish/PhotoRepository/main/img/SSL-TLS/20211120204834.gif" alt="img"></p>
+<h3 id="4-main-inI2-outR2源码分析"><a href="#4-main-inI2-outR2源码分析" class="headerlink" title="4. main_inI2_outR2源码分析"></a>4. main_inI2_outR2源码分析</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="function">stf_status</span></span><br><span class="line"><span class="function"><span class="title">main_inI2_outR2</span><span class="params">(struct msg_digest *md)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">state</span> *<span class="title">const</span> <span class="title">st</span> =</span> md-&gt;st;</span><br><span class="line">    pb_stream *keyex_pbs = &amp;md-&gt;chain[ISAKMP_NEXT_KE]-&gt;pbs;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* if we are already processing a packet on this st, we will be unable</span></span><br><span class="line"><span class="comment">     * to start another crypto operation below */</span></span><br><span class="line">    <span class="keyword">if</span> (is_suspended(st)) &#123;<span class="comment">/*为了方式该流程处理时间过长导致对端超时重发*/</span></span><br><span class="line">        openswan_log(<span class="string">&quot;%s: already processing a suspended cyrpto operation &quot;</span></span><br><span class="line">                     <span class="string">&quot;on this SA, duplicate will be dropped.&quot;</span>, __func__);</span><br><span class="line">	<span class="keyword">return</span> STF_TOOMUCHCRYPTO;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* KE in */</span><span class="comment">/*从报文中获取KE载荷，并填充到st-&gt;st_gi上*/</span></span><br><span class="line">    RETURN_STF_FAILURE(accept_KE(&amp;st-&gt;st_gi, <span class="string">&quot;Gi&quot;</span></span><br><span class="line">				 , st-&gt;st_oakley.group, keyex_pbs));</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* Ni in */</span><span class="comment">/*从报文中获取Nonce载荷，并填充到st-&gt;st_ni上*/</span></span><br><span class="line">    RETURN_STF_FAILURE(accept_v1_nonce(md, &amp;st-&gt;st_ni, <span class="string">&quot;Ni&quot;</span>));</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* decode certificate requests */</span><span class="comment">/*解析证书载荷，以链表的方式存储在st-&gt;st_connection-&gt;requested_ca*/</span></span><br><span class="line">    ikev1_decode_cr(md, &amp;st-&gt;st_connection-&gt;ikev1_requested_ca_names);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span>(st-&gt;st_connection-&gt;requested_ca != <span class="literal">NULL</span>)</span><br><span class="line">    &#123;</span><br><span class="line">	st-&gt;hidden_variables.st_got_certrequest = TRUE;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">ifdef</span> NAT_TRAVERSAL</span></span><br><span class="line">    DBG(DBG_NATT</span><br><span class="line">	, DBG_log(<span class="string">&quot;inI2: checking NAT-T: %d and %d&quot;</span></span><br><span class="line">		  , nat_traversal_enabled</span><br><span class="line">		  , st-&gt;hidden_variables.st_nat_traversal));</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (st-&gt;hidden_variables.st_nat_traversal &amp; NAT_T_WITH_NATD) &#123;</span><br><span class="line">       DBG(DBG_NATT, DBG_log(<span class="string">&quot; NAT_T_WITH_NATD detected&quot;</span>));</span><br><span class="line">       nat_traversal_natd_lookup(md);<span class="comment">/*根据哈希值确定是否经过NAT;状态上的NAT-T标志在此处做的修改*/</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (st-&gt;hidden_variables.st_nat_traversal) &#123;<span class="comment">/*打印NAT-T、端口浮动相关信息*/</span></span><br><span class="line">       nat_traversal_show_result(st-&gt;hidden_variables.st_nat_traversal</span><br><span class="line">				 , md-&gt;sender_port);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (st-&gt;hidden_variables.st_nat_traversal &amp; NAT_T_WITH_KA) &#123;</span><br><span class="line">       DBG(DBG_NATT, DBG_log(<span class="string">&quot; NAT_T_WITH_KA detected&quot;</span>));</span><br><span class="line">       nat_traversal_new_ka_event();<span class="comment">/*添加NAT-T的保活事件*/</span></span><br><span class="line">    &#125;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line"></span><br><span class="line">    &#123;</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">ke_continuation</span> *<span class="title">ke</span> =</span> alloc_thing(struct ke_continuation</span><br><span class="line">					     , <span class="string">&quot;inI2_outR2 KE&quot;</span>);</span><br><span class="line"></span><br><span class="line">	ke-&gt;md = md;</span><br><span class="line">	set_suspended(st, md);</span><br><span class="line"></span><br><span class="line">	passert(st-&gt;st_sec_in_use == FALSE);</span><br><span class="line">	pcrc_init(&amp;ke-&gt;ke_pcrc);</span><br><span class="line">	ke-&gt;ke_pcrc.pcrc_func = main_inI2_outR2_continue;</span><br><span class="line">	<span class="keyword">return</span> build_ke(&amp;ke-&gt;ke_pcrc, st</span><br><span class="line">			, st-&gt;st_oakley.group, st-&gt;st_import);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="5-nat-traversal-natd-lookup源码分析"><a href="#5-nat-traversal-natd-lookup源码分析" class="headerlink" title="5. nat_traversal_natd_lookup源码分析"></a>5. nat_traversal_natd_lookup源码分析</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="comment">/*检查是否需要经过NAT-T*/</span></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">nat_traversal_natd_lookup</span><span class="params">(struct msg_digest *md)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="keyword">unsigned</span> <span class="keyword">char</span> hash_me[MAX_DIGEST_LEN];</span><br><span class="line">	<span class="keyword">unsigned</span> <span class="keyword">char</span> hash_him[MAX_DIGEST_LEN];</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">payload_digest</span> *<span class="title">p</span>;</span></span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">state</span> *<span class="title">st</span> =</span> md-&gt;st;</span><br><span class="line">	<span class="keyword">bool</span> found_me = FALSE;</span><br><span class="line">	<span class="keyword">bool</span> found_him= FALSE;</span><br><span class="line">	<span class="keyword">int</span> i;</span><br><span class="line"></span><br><span class="line">	passert(st);</span><br><span class="line">	passert(md-&gt;iface);</span><br><span class="line">	passert(st-&gt;st_oakley.prf_hasher);</span><br><span class="line"></span><br><span class="line">	<span class="comment">/** Count NAT-D **/</span></span><br><span class="line">	<span class="keyword">for</span> (p = md-&gt;chain[ISAKMP_NEXT_NATD_RFC], i=<span class="number">0</span>;</span><br><span class="line">	     p != <span class="literal">NULL</span>;</span><br><span class="line">	     p = p-&gt;next, i++);<span class="comment">/*统计NAT-D的数量*/</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">/**</span></span><br><span class="line"><span class="comment">	 * We need at least 2 NAT-D (1 for us, many for peer)</span></span><br><span class="line"><span class="comment">	 */</span></span><br><span class="line">	<span class="keyword">if</span> (i &lt; <span class="number">2</span>) &#123;</span><br><span class="line">		loglog(RC_LOG_SERIOUS,</span><br><span class="line">		<span class="string">&quot;NAT-Traversal: Only %d NAT-D - Aborting NAT-Traversal negotiation&quot;</span>, i);</span><br><span class="line">		st-&gt;hidden_variables.st_nat_traversal = <span class="number">0</span>;</span><br><span class="line">		<span class="keyword">return</span>;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">/**</span></span><br><span class="line"><span class="comment">	 * First one with my IP &amp; port</span></span><br><span class="line"><span class="comment">	 */</span></span><br><span class="line">	_natd_hash(st-&gt;st_oakley.prf_hasher, hash_me</span><br><span class="line">		   , st-&gt;st_icookie, st-&gt;st_rcookie</span><br><span class="line">		   , &amp;(md-&gt;iface-&gt;ip_addr)</span><br><span class="line">		   , ntohs(md-&gt;iface-&gt;port));</span><br><span class="line"></span><br><span class="line">	<span class="comment">/**</span></span><br><span class="line"><span class="comment">	 * The others with sender IP &amp; port</span></span><br><span class="line"><span class="comment">	 */</span></span><br><span class="line">	_natd_hash(st-&gt;st_oakley.prf_hasher, hash_him</span><br><span class="line">		   , st-&gt;st_icookie, st-&gt;st_rcookie</span><br><span class="line">		   , &amp;(md-&gt;sender), ntohs(md-&gt;sender_port));</span><br><span class="line"></span><br><span class="line">	<span class="keyword">for</span> (p = md-&gt;chain[ISAKMP_NEXT_NATD_RFC], i=<span class="number">0</span>;</span><br><span class="line">	     p != <span class="literal">NULL</span> &amp;&amp; (!found_me || !found_him);</span><br><span class="line">	     p = p-&gt;next)</span><br><span class="line">	  &#123;</span><br><span class="line">	    DBG(DBG_NATT,</span><br><span class="line">		DBG_log(<span class="string">&quot;NAT_TRAVERSAL hash=%d (me:%d) (him:%d)&quot;</span></span><br><span class="line">			, i, found_me, found_him);</span><br><span class="line">		DBG_dump(<span class="string">&quot;expected NAT-D(me):&quot;</span>, hash_me,</span><br><span class="line">			 st-&gt;st_oakley.prf_hasher-&gt;hash_digest_len);</span><br><span class="line">		DBG_dump(<span class="string">&quot;expected NAT-D(him):&quot;</span>, hash_him,</span><br><span class="line">			 st-&gt;st_oakley.prf_hasher-&gt;hash_digest_len);</span><br><span class="line">		DBG_dump(<span class="string">&quot;received NAT-D:&quot;</span>, p-&gt;pbs.cur, pbs_left(&amp;p-&gt;pbs));</span><br><span class="line">		);</span><br><span class="line"></span><br><span class="line">	    <span class="keyword">if</span> ( (pbs_left(&amp;p-&gt;pbs) == st-&gt;st_oakley.prf_hasher-&gt;hash_digest_len)</span><br><span class="line">		 &amp;&amp; (<span class="built_in">memcmp</span>(p-&gt;pbs.cur, hash_me</span><br><span class="line">			    , st-&gt;st_oakley.prf_hasher-&gt;hash_digest_len)==<span class="number">0</span>))</span><br><span class="line">	      &#123;</span><br><span class="line">		found_me = TRUE;<span class="comment">/*本端未经过NAT*/</span></span><br><span class="line">	      &#125;</span><br><span class="line"></span><br><span class="line">	    <span class="keyword">if</span> ( (pbs_left(&amp;p-&gt;pbs) == st-&gt;st_oakley.prf_hasher-&gt;hash_digest_len)</span><br><span class="line">		 &amp;&amp; (<span class="built_in">memcmp</span>(p-&gt;pbs.cur, hash_him</span><br><span class="line">			    , st-&gt;st_oakley.prf_hasher-&gt;hash_digest_len)==<span class="number">0</span>))</span><br><span class="line">	      &#123;</span><br><span class="line">		found_him = TRUE;<span class="comment">/*对端未经过NAT*/</span></span><br><span class="line">	      &#125;</span><br><span class="line"></span><br><span class="line">	    i++;</span><br><span class="line">	  &#125;</span><br><span class="line"></span><br><span class="line">	DBG(DBG_NATT,</span><br><span class="line">	    DBG_log(<span class="string">&quot;NAT_TRAVERSAL hash=%d (me:%d) (him:%d)&quot;</span></span><br><span class="line">		    , i, found_me, found_him));</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span>(!found_me) &#123;</span><br><span class="line">	    st-&gt;hidden_variables.st_nat_traversal |= LELEM(NAT_TRAVERSAL_NAT_BHND_ME);<span class="comment">/*本端经过NAT*/</span></span><br><span class="line">	    st-&gt;hidden_variables.st_natd = md-&gt;sender;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">        <span class="built_in">memset</span>(&amp;st-&gt;hidden_variables.st_natd,<span class="number">0</span>,<span class="keyword">sizeof</span>(st-&gt;hidden_variables.st_natd));</span><br><span class="line">	anyaddr(AF_INET, &amp;st-&gt;hidden_variables.st_natd);</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span>(!found_him) &#123;</span><br><span class="line">	    st-&gt;hidden_variables.st_nat_traversal |= LELEM(NAT_TRAVERSAL_NAT_BHND_PEER);<span class="comment">/*对端经过NAT*/</span></span><br><span class="line">	    st-&gt;hidden_variables.st_natd = md-&gt;sender;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span>(st-&gt;st_connection-&gt;forceencaps) &#123;<span class="comment">/*如果需要强制使用UDP封装双方都需要NAT-D*/</span></span><br><span class="line">	    DBG(DBG_NATT,</span><br><span class="line">		DBG_log(<span class="string">&quot;NAT_TRAVERSAL forceencaps enabled&quot;</span>));</span><br><span class="line"></span><br><span class="line">	    st-&gt;hidden_variables.st_nat_traversal |= LELEM(NAT_TRAVERSAL_NAT_BHND_PEER);</span><br><span class="line">	    st-&gt;hidden_variables.st_nat_traversal |= LELEM(NAT_TRAVERSAL_NAT_BHND_ME);</span><br><span class="line">	    st-&gt;hidden_variables.st_natd = md-&gt;sender;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="6-build-ke源码分析"><a href="#6-build-ke源码分析" class="headerlink" title="6. build_ke源码分析"></a>6. build_ke源码分析</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="function">stf_status <span class="title">build_ke</span><span class="params">(struct pluto_crypto_req_cont *cn</span></span></span><br><span class="line"><span class="params"><span class="function">		    , struct state *st</span></span></span><br><span class="line"><span class="params"><span class="function">		    , <span class="keyword">const</span> struct oakley_group_desc *group</span></span></span><br><span class="line"><span class="params"><span class="function">		    , <span class="keyword">enum</span> crypto_importance importance)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">pluto_crypto_req</span> <span class="title">rd</span>;</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">pluto_crypto_req</span> *<span class="title">r</span> =</span> &amp;rd;</span><br><span class="line">    <span class="keyword">err_t</span> e;</span><br><span class="line">    <span class="keyword">bool</span> toomuch = FALSE;</span><br><span class="line"><span class="comment">/*初始化加密请求*/</span></span><br><span class="line">    pcr_init(r, pcr_build_kenonce, importance);</span><br><span class="line">    r-&gt;pcr_d.kn.oakley_group   = group-&gt;group;</span><br><span class="line"></span><br><span class="line">    cn-&gt;pcrc_serialno = st-&gt;st_serialno;</span><br><span class="line">	<span class="comment">/*申请制作加密材料请求*/</span></span><br><span class="line">    e= send_crypto_helper_request(r, cn, &amp;toomuch);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span>(e != <span class="literal">NULL</span>) &#123;<span class="comment">/*加密失败*/</span></span><br><span class="line">	loglog(RC_LOG_SERIOUS, <span class="string">&quot;can not start crypto helper: %s&quot;</span>, e);</span><br><span class="line">	<span class="keyword">if</span>(toomuch) &#123;</span><br><span class="line">	    <span class="keyword">return</span> STF_TOOMUCHCRYPTO;</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">	    <span class="keyword">return</span> STF_FAIL;</span><br><span class="line">	&#125;</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span>(!toomuch) &#123;<span class="comment">/*加密任务繁忙，先挂起等待再次调度*/</span></span><br><span class="line">	st-&gt;st_calculating = TRUE;</span><br><span class="line">	delete_event(st);</span><br><span class="line">	event_schedule(EVENT_CRYPTO_FAILED, EVENT_CRYPTO_FAILED_DELAY, st);</span><br><span class="line">	<span class="keyword">return</span> STF_SUSPEND;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">	<span class="comment">/* we must have run the continuation directly, so</span></span><br><span class="line"><span class="comment">	 * complete_v1_state_transition already got called.</span></span><br><span class="line"><span class="comment">	 * 由于我们已经手动执行了main_inR1_outI2_continue(),该函数最终会调用到complete_v1_state_transition</span></span><br><span class="line"><span class="comment">	 * 因此在(process_v1_state_xxx流程中不必再此执行状态转换函数。因此返回STF_INLINE，当再次到complete_v1_state_transition</span></span><br><span class="line"><span class="comment">	 *判断返回值为它，则不再执行此函数。)</span></span><br><span class="line"><span class="comment">	 */</span></span><br><span class="line">	<span class="keyword">return</span> STF_INLINE;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="7-main-inI2-outR2-continue源码分析"><a href="#7-main-inI2-outR2-continue源码分析" class="headerlink" title="7. main_inI2_outR2_continue源码分析"></a>7. main_inI2_outR2_continue源码分析</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">void</span></span></span><br><span class="line"><span class="function"><span class="title">main_inI2_outR2_continue</span><span class="params">(struct pluto_crypto_req_cont *pcrc</span></span></span><br><span class="line"><span class="params"><span class="function">			 , struct pluto_crypto_req *r</span></span></span><br><span class="line"><span class="params"><span class="function">			 , <span class="keyword">err_t</span> ugh)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">ke_continuation</span> *<span class="title">ke</span> =</span> (struct ke_continuation *)pcrc;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">msg_digest</span> *<span class="title">md</span> =</span> ke-&gt;md;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">state</span> *<span class="title">const</span> <span class="title">st</span> =</span> md-&gt;st;</span><br><span class="line">    stf_status e;</span><br><span class="line">    ... ... </span><br><span class="line">    set_suspended(st, <span class="literal">NULL</span>);	<span class="comment">/* no longer connected or suspended */</span></span><br><span class="line"></span><br><span class="line">    set_cur_state(st);</span><br><span class="line"></span><br><span class="line">    st-&gt;st_calculating = FALSE;</span><br><span class="line">    e = main_inI2_outR2_tail(pcrc, r);<span class="comment">/*构造应答报文*/</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span>(ke-&gt;md != <span class="literal">NULL</span>) &#123;</span><br><span class="line">        complete_v1_state_transition(&amp;ke-&gt;md, e);<span class="comment">/*发送报文并完后后续处理工作*/</span></span><br><span class="line">        <span class="keyword">if</span>(ke-&gt;md) release_md(ke-&gt;md);</span><br><span class="line">    &#125;</span><br><span class="line">    reset_cur_state();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="8-main-inI2-outR2-tail源码分析"><a href="#8-main-inI2-outR2-tail源码分析" class="headerlink" title="8. main_inI2_outR2_tail源码分析"></a>8. main_inI2_outR2_tail源码分析</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * this routine gets called after any DH exponentiation that needs to be done</span></span><br><span class="line"><span class="comment"> * has been done, and we are ready to send our g^y.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function">stf_status</span></span><br><span class="line"><span class="function"><span class="title">main_inI2_outR2_tail</span><span class="params">(struct pluto_crypto_req_cont *pcrc</span></span></span><br><span class="line"><span class="params"><span class="function">		     , struct pluto_crypto_req *r)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">ke_continuation</span> *<span class="title">ke</span> =</span> (struct ke_continuation *)pcrc;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">msg_digest</span> *<span class="title">md</span> =</span> ke-&gt;md;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">state</span> *<span class="title">st</span> =</span> md-&gt;st;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* send CR if auth is RSA and no preloaded RSA public key exists*/</span></span><br><span class="line">    <span class="keyword">bool</span> send_cr = FALSE;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**************** build output packet HDR;KE;Nr ****************/</span></span><br><span class="line"></span><br><span class="line"><span class="comment">/*如果以下四个条件同时满足，则通过需要发送证书。。*/</span></span><br><span class="line">    send_cr = !no_cr_send							<span class="comment">/*配置中允许发送证书*/</span></span><br><span class="line">	&amp;&amp; (st-&gt;st_oakley.auth == OAKLEY_RSA_SIG)		<span class="comment">/*使用RSA签名*/</span></span><br><span class="line">	&amp;&amp; !has_preloaded_public_key(st)				<span class="comment">/*未加载未共享秘钥*/</span></span><br><span class="line">	&amp;&amp; st-&gt;st_connection-&gt;spd.that.ca.ptr != <span class="literal">NULL</span>;	<span class="comment">/*对端证书非空*/</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">/* HDR out */</span></span><br><span class="line">    echo_hdr(md, FALSE, ISAKMP_NEXT_KE);</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* KE out */</span><span class="comment">/*添加KE载荷，并将其存储在st-&gt;st_gr*/</span></span><br><span class="line">    <span class="keyword">if</span> (!ship_KE(st, r, &amp;st-&gt;st_gr</span><br><span class="line">		 , &amp;md-&gt;rbody, ISAKMP_NEXT_NONCE))</span><br><span class="line">	&#123;</span><br><span class="line">	    osw_abort();</span><br><span class="line">	<span class="keyword">return</span> STF_INTERNAL_ERROR;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">ifdef</span> DEBUG</span></span><br><span class="line"> &#123;</span><br><span class="line">    <span class="comment">/* Nr out */</span></span><br><span class="line">    <span class="keyword">int</span> next_payload;</span><br><span class="line">    next_payload = ISAKMP_NEXT_NONE;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span>(cur_debugging &amp; IMPAIR_BUST_MR2)</span><br><span class="line">    &#123;</span><br><span class="line">	next_payload = ISAKMP_NEXT_VID;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span>(send_cr)</span><br><span class="line">    &#123;</span><br><span class="line">        next_payload = ISAKMP_NEXT_CR;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (!ship_nonce(&amp;st-&gt;st_nr, r</span><br><span class="line">		    , &amp;md-&gt;rbody</span><br><span class="line">		    , next_payload</span><br><span class="line">		    , <span class="string">&quot;Nr&quot;</span>))</span><br><span class="line">	<span class="keyword">return</span> STF_INTERNAL_ERROR;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (cur_debugging &amp; IMPAIR_BUST_MR2)</span><br><span class="line">    &#123;</span><br><span class="line">	<span class="comment">/* generate a pointless large VID payload to push message over MTU */</span></span><br><span class="line">	pb_stream vid_pbs;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> (!out_generic((send_cr)? ISAKMP_NEXT_CR : ISAKMP_NEXT_NONE,</span><br><span class="line">	    &amp;isakmp_vendor_id_desc, &amp;md-&gt;rbody, &amp;vid_pbs))</span><br><span class="line">	    <span class="keyword">return</span> STF_INTERNAL_ERROR;</span><br><span class="line">	<span class="keyword">if</span> (!out_zero(<span class="number">1500</span> <span class="comment">/*MTU?*/</span>, &amp;vid_pbs, <span class="string">&quot;Filler VID&quot;</span>))</span><br><span class="line">	    <span class="keyword">return</span> STF_INTERNAL_ERROR;</span><br><span class="line">	close_output_pbs(&amp;vid_pbs);</span><br><span class="line">    &#125;</span><br><span class="line"> &#125;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">else</span></span></span><br><span class="line">    <span class="comment">/* Nr out */</span><span class="comment">/*添加NONCE载荷，并将其存储在st-&gt;st_nr*/</span></span><br><span class="line">    <span class="keyword">if</span> (!ship_nonce(&amp;st-&gt;st_nr, r</span><br><span class="line">		    , &amp;md-&gt;rbody</span><br><span class="line">		    , (send_cr)? ISAKMP_NEXT_CR : ISAKMP_NEXT_NONE</span><br><span class="line">		    , <span class="string">&quot;Nr&quot;</span>))</span><br><span class="line">	<span class="keyword">return</span> STF_INTERNAL_ERROR;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line"></span><br><span class="line">    <span class="comment">/* CR out */</span><span class="comment">/*如果需要发送证书*/</span></span><br><span class="line">    <span class="keyword">if</span> (send_cr)</span><br><span class="line">    &#123;</span><br><span class="line">	<span class="keyword">if</span> (st-&gt;st_connection-&gt;kind == CK_PERMANENT)<span class="comment">/*双方连接固定,即两端的IP的确定的*/</span></span><br><span class="line">	&#123;</span><br><span class="line">	    <span class="keyword">if</span> (!build_and_ship_CR(CERT_X509_SIGNATURE <span class="comment">/*添加对端证书载荷*/</span></span><br><span class="line">				   , st-&gt;st_connection-&gt;spd.that.ca</span><br><span class="line">				   , &amp;md-&gt;rbody, ISAKMP_NEXT_NONE))</span><br><span class="line">		<span class="keyword">return</span> STF_INTERNAL_ERROR;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">else</span></span><br><span class="line">	&#123;</span><br><span class="line">	    generalName_t *ca = <span class="literal">NULL</span>;</span><br><span class="line">	<span class="comment">/*查询可用的证书   ???*/</span></span><br><span class="line">	    <span class="keyword">if</span> (collect_rw_ca_candidates(md, &amp;ca))<span class="comment">/*收集所有可用证书,并全部加载到ca链表上*/</span></span><br><span class="line">	    &#123;</span><br><span class="line">		generalName_t *gn;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">for</span> (gn = ca; gn != <span class="literal">NULL</span>; gn = gn-&gt;next)</span><br><span class="line">		&#123;</span><br><span class="line">		    <span class="keyword">if</span> (!build_and_ship_CR(CERT_X509_SIGNATURE, gn-&gt;name<span class="comment">/*将所有的可用证书加载到链表上*/</span></span><br><span class="line">		    , &amp;md-&gt;rbody</span><br><span class="line">		    , gn-&gt;next == <span class="literal">NULL</span> ? ISAKMP_NEXT_NONE : ISAKMP_NEXT_CR))</span><br><span class="line">			<span class="keyword">return</span> STF_INTERNAL_ERROR;</span><br><span class="line">		&#125;</span><br><span class="line">		free_generalNames(ca, FALSE);<span class="comment">/*释放可用证书链表*/</span></span><br><span class="line">	    &#125;</span><br><span class="line">	    <span class="keyword">else</span></span><br><span class="line">	    &#123;<span class="comment">/*确实没有找到可用的证书，则填充一个空的证书载荷*/</span></span><br><span class="line">		<span class="keyword">if</span> (!build_and_ship_CR(CERT_X509_SIGNATURE, empty_chunk</span><br><span class="line">		, &amp;md-&gt;rbody, ISAKMP_NEXT_NONE))</span><br><span class="line">		    <span class="keyword">return</span> STF_INTERNAL_ERROR;</span><br><span class="line">	    &#125;</span><br><span class="line">	&#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">ifdef</span> NAT_TRAVERSAL</span></span><br><span class="line">    <span class="keyword">if</span> (st-&gt;hidden_variables.st_nat_traversal &amp; NAT_T_WITH_NATD) &#123;</span><br><span class="line">	<span class="keyword">if</span> (!nat_traversal_add_natd(ISAKMP_NEXT_NONE, &amp;md-&gt;rbody, md))<span class="comment">/*添加NAT-D载荷*/</span></span><br><span class="line">	    <span class="keyword">return</span> STF_INTERNAL_ERROR;</span><br><span class="line">    &#125;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line"></span><br><span class="line">    <span class="comment">/* finish message */</span></span><br><span class="line">    close_message(&amp;md-&gt;rbody);</span><br><span class="line"><span class="comment">/*********************************************</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment">	使  用  DH  算  法  开  始  制  作  密  钥</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment">***********************************************/</span></span><br><span class="line">    <span class="comment">/*</span></span><br><span class="line"><span class="comment">     * next message will be encrypted, so, we need to have</span></span><br><span class="line"><span class="comment">     * the DH value calculated. We can do this in the background,</span></span><br><span class="line"><span class="comment">     * sending the reply right away. We have to be careful on the next</span></span><br><span class="line"><span class="comment">     * state, since the other end may reply faster than we can calculate</span></span><br><span class="line"><span class="comment">     * things. If it is the case, then the packet is placed in the</span></span><br><span class="line"><span class="comment">     * continuation, and we let the continuation process it. If there</span></span><br><span class="line"><span class="comment">     * is a retransmit, we keep only the last packet.</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * Also, note that this is not a suspended state, since we are</span></span><br><span class="line"><span class="comment">     * actually just doing work in the background.</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    &#123;</span><br><span class="line">    <span class="comment">/* Looks like we missed perform_dh() declared at</span></span><br><span class="line"><span class="comment">     * programs/pluto/pluto_crypt.h as external and implemented nowhere.</span></span><br><span class="line"><span class="comment">     * Following code regarding dh_continuation allocation seems useless</span></span><br><span class="line"><span class="comment">     * as it&#x27;s never used. At least, we should free it.</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">dh_continuation</span> *<span class="title">dh</span> =</span> alloc_thing(struct dh_continuation</span><br><span class="line">						 , <span class="string">&quot;main_inI2_outR2_tail&quot;</span>);</span><br><span class="line">	stf_status e;</span><br><span class="line"></span><br><span class="line">	dh-&gt;md = <span class="literal">NULL</span>;</span><br><span class="line">	dh-&gt;serialno = st-&gt;st_serialno;</span><br><span class="line">	pcrc_init(&amp;dh-&gt;dh_pcrc);</span><br><span class="line">	dh-&gt;dh_pcrc.pcrc_func = main_inI2_outR2_calcdone;</span><br><span class="line">	passert(st-&gt;st_suspended_md == <span class="literal">NULL</span>);</span><br><span class="line"></span><br><span class="line">	DBG(DBG_CONTROLMORE</span><br><span class="line">	    , DBG_log(<span class="string">&quot;main inI2_outR2: starting async DH calculation (group=%d)&quot;</span>, st-&gt;st_oakley.group-&gt;group));</span><br><span class="line"></span><br><span class="line">	e = start_dh_secretiv(&amp;dh-&gt;dh_pcrc, st</span><br><span class="line">			      , st-&gt;st_import</span><br><span class="line">			      , RESPONDER</span><br><span class="line">			      , st-&gt;st_oakley.group-&gt;group);</span><br><span class="line"></span><br><span class="line">	DBG(DBG_CONTROLMORE,</span><br><span class="line">	    DBG_log(<span class="string">&quot;started dh_secretiv, returned: stf=%s\n&quot;</span></span><br><span class="line">		    , stf_status_name(e)));</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span>(e == STF_FAIL) &#123;</span><br><span class="line">	    loglog(RC_LOG_SERIOUS, <span class="string">&quot;failed to start async DH calculation, stf=%s\n&quot;</span></span><br><span class="line">		   , stf_status_name(e));</span><br><span class="line">	    <span class="keyword">return</span> e;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">/* we are calculating in the background, so it doesn&#x27;t count */</span></span><br><span class="line">	<span class="keyword">if</span>(e == STF_SUSPEND) &#123;</span><br><span class="line">	    st-&gt;st_calculating = FALSE;</span><br><span class="line">	&#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> STF_OK;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="9-main-inI2-outR2-calcdone源码分析"><a href="#9-main-inI2-outR2-calcdone源码分析" class="headerlink" title="9. main_inI2_outR2_calcdone源码分析"></a>9. main_inI2_outR2_calcdone源码分析</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">void</span></span></span><br><span class="line"><span class="function"><span class="title">main_inI2_outR2_calcdone</span><span class="params">(struct pluto_crypto_req_cont *pcrc</span></span></span><br><span class="line"><span class="params"><span class="function">			 , struct pluto_crypto_req *r</span></span></span><br><span class="line"><span class="params"><span class="function">			 , <span class="keyword">err_t</span> ugh)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">dh_continuation</span> *<span class="title">dh</span> =</span> (struct dh_continuation *)pcrc;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">state</span> *<span class="title">st</span>;</span></span><br><span class="line"></span><br><span class="line">    DBG(DBG_CONTROLMORE</span><br><span class="line">	, DBG_log(<span class="string">&quot;main inI2_outR2: calculated DH finished&quot;</span>));</span><br><span class="line"></span><br><span class="line">    st = state_with_serialno(dh-&gt;serialno);</span><br><span class="line">    <span class="keyword">if</span>(st == <span class="literal">NULL</span>) &#123;</span><br><span class="line">	openswan_log(<span class="string">&quot;state %ld disappeared during crypto\n&quot;</span>, dh-&gt;serialno);</span><br><span class="line">	<span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    set_cur_state(st);</span><br><span class="line">    <span class="keyword">if</span>(ugh) &#123;</span><br><span class="line">	loglog(RC_LOG_SERIOUS, <span class="string">&quot;DH crypto failed: %s\n&quot;</span>, ugh);</span><br><span class="line">	<span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line"><span class="comment">/*将生成的三把秘钥、DH-IV等信息存储在状态上*/</span></span><br><span class="line">    finish_dh_secretiv(st, r);</span><br><span class="line">    <span class="keyword">if</span>(!r-&gt;pcr_success) &#123;</span><br><span class="line">        loglog(RC_LOG_SERIOUS, <span class="string">&quot;DH crypto failed, invalid keys&quot;</span>);</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    ikev2_validate_key_lengths(st);</span><br><span class="line"></span><br><span class="line">    st-&gt;hidden_variables.st_skeyid_calculated = TRUE;</span><br><span class="line">    update_iv(st);<span class="comment">/*更新IV值*/</span></span><br><span class="line">    <span class="comment">/* <span class="doctag">XXX:</span> Do we need to free dh here? If so, how about the other exits?</span></span><br><span class="line"><span class="comment">     * pfree(dh); dh = NULL;</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">/*</span></span><br><span class="line"><span class="comment">     * if there was a packet received while we were calculating, then</span></span><br><span class="line"><span class="comment">     * process it now.</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">     <span class="comment">/*如果在计算秘钥的过程中收到新的报文则现在再处理该报文*/</span></span><br><span class="line">    <span class="keyword">if</span>(st-&gt;st_suspended_md != <span class="literal">NULL</span>) &#123;</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">msg_digest</span> *<span class="title">md</span> =</span> st-&gt;st_suspended_md;</span><br><span class="line"></span><br><span class="line">	set_suspended(st, <span class="literal">NULL</span>);</span><br><span class="line">	process_packet_tail(&amp;md);</span><br><span class="line">	<span class="keyword">if</span>(md != <span class="literal">NULL</span>) &#123;</span><br><span class="line">	    release_md(md);</span><br><span class="line">	&#125;</span><br><span class="line">    &#125;</span><br><span class="line">    reset_cur_state();</span><br><span class="line">    <span class="keyword">return</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/blogs/tags/ipsec/" rel="tag"># IPSec</a>
+              <a href="/blogs/tags/openswan/" rel="tag"># openswan</a>
+              <a href="/blogs/tags/VPN/" rel="tag"># VPN</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/blogs/2021/11/20/%E5%BF%AB%E9%80%9F%E6%A8%A1%E5%BC%8F%E7%AC%AC%E4%B8%89%E5%8C%85-2%20quick_inI2()/" rel="prev" title="快速模式第三包收尾之quick_inI2()">
+      <i class="fa fa-chevron-left"></i> 快速模式第三包收尾之quick_inI2()
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/blogs/2021/11/20/%E4%B8%BB%E6%A8%A1%E5%BC%8F%E7%AC%AC%E5%85%AD%E5%8C%85%EF%BC%9Amain_inI3_outR3/" rel="next" title="主模式第六包：main_inI3_outR 3">
+      主模式第六包：main_inI3_outR 3 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E5%BA%8F%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">1. 序言</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E5%87%BD%E6%95%B0%E8%B0%83%E7%94%A8%E5%85%B3%E7%B3%BB"><span class="nav-number">2.</span> <span class="nav-text">2.函数调用关系</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E7%AC%AC%E5%9B%9B%E4%B8%AA%E6%8A%A5%E6%96%87%E6%B5%81%E7%A8%8B%E5%9B%BE"><span class="nav-number">3.</span> <span class="nav-text">3. 第四个报文流程图</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-main-inI2-outR2%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90"><span class="nav-number">4.</span> <span class="nav-text">4. main_inI2_outR2源码分析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-nat-traversal-natd-lookup%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90"><span class="nav-number">5.</span> <span class="nav-text">5. nat_traversal_natd_lookup源码分析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-build-ke%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90"><span class="nav-number">6.</span> <span class="nav-text">6. build_ke源码分析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#7-main-inI2-outR2-continue%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90"><span class="nav-number">7.</span> <span class="nav-text">7. main_inI2_outR2_continue源码分析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#8-main-inI2-outR2-tail%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90"><span class="nav-number">8.</span> <span class="nav-text">8. main_inI2_outR2_tail源码分析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#9-main-inI2-outR2-calcdone%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90"><span class="nav-number">9.</span> <span class="nav-text">9. main_inI2_outR2_calcdone源码分析</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="叨陪鲤"
+      src="/blogs/images/me.jpg">
+  <p class="site-author-name" itemprop="name">叨陪鲤</p>
+  <div class="site-description" itemprop="description">他日趋庭，叨陪鲤对</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/blogs/archives/">
+        
+          <span class="site-state-item-count">14</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/blogs/categories/">
+        <span class="site-state-item-count">3</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/blogs/tags/">
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div>
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<span id="busuanzi_container_site_pv" style='display:none'>
+    本站总访问量 <span id="busuanzi_value_site_pv"></span> 次
+    <span class="post-meta-divider">|</span>
+</span>
+<span id="busuanzi_container_site_uv" style='display:none'>
+    有<span id="busuanzi_value_site_uv"></span>人看过我的博客啦
+</span>
+</div>
+
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">叨陪鲤</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> 强力驱动
+  </div>
+
+
+    <script async src="//dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+        
+<div class="busuanzi-count">
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/blogs/lib/anime.min.js"></script>
+  <script src="/blogs/lib/pjax/pjax.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="/blogs/lib/velocity/velocity.min.js"></script>
+  <script src="/blogs/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/blogs/js/utils.js"></script>
+
+<script src="/blogs/js/motion.js"></script>
+
+
+<script src="/blogs/js/schemes/muse.js"></script>
+
+
+<script src="/blogs/js/next-boot.js"></script>
+
+  <script>
+var pjax = new Pjax({
+  selectors: [
+    'head title',
+    '#page-configurations',
+    '.content-wrap',
+    '.post-toc-wrap',
+    '.languages',
+    '#pjax'
+  ],
+  switches: {
+    '.post-toc-wrap': Pjax.switches.innerHTML
+  },
+  analytics: false,
+  cacheBust: false,
+  scrollTo : !CONFIG.bookmark.enable
+});
+
+window.addEventListener('pjax:success', () => {
+  document.querySelectorAll('script[data-pjax], script#page-configurations, #pjax script').forEach(element => {
+    var code = element.text || element.textContent || element.innerHTML || '';
+    var parent = element.parentNode;
+    parent.removeChild(element);
+    var script = document.createElement('script');
+    if (element.id) {
+      script.id = element.id;
+    }
+    if (element.className) {
+      script.className = element.className;
+    }
+    if (element.type) {
+      script.type = element.type;
+    }
+    if (element.src) {
+      script.src = element.src;
+      // Force synchronous loading of peripheral JS.
+      script.async = false;
+    }
+    if (element.dataset.pjax !== undefined) {
+      script.dataset.pjax = '';
+    }
+    if (code !== '') {
+      script.appendChild(document.createTextNode(code));
+    }
+    parent.appendChild(script);
+  });
+  NexT.boot.refresh();
+  // Define Motion Sequence & Bootstrap Motion.
+  if (CONFIG.motion.enable) {
+    NexT.motion.integrator
+      .init()
+      .add(NexT.motion.middleWares.subMenu)
+      .add(NexT.motion.middleWares.postList)
+      .bootstrap();
+  }
+  NexT.utils.updateSidebarPosition();
+});
+</script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/blogs/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <div id="pjax">
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('[object Object]', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'MQdIgAGKML1LrVfkG1rbQUgO-gzGzoHsz',
+      appKey     : '3ECTEO4bp11EiKGpp4bTd07P',
+      placeholder: "欢迎留言交流学习！",
+      avatar     : 'robohash',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : 'en, zh-cn' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+    </div>
+</body>
+</html>

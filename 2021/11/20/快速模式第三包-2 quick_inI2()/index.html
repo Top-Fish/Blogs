@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/blogs/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/blogs/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/blogs/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/blogs/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/blogs/css/main.css">
+
+
+<link rel="stylesheet" href="/blogs/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":".github.io","root":"/blogs/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"always","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"buttons","active":"valine","storage":true,"lazyload":false,"nav":null,"activeClass":"valine"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta property="og:type" content="article">
+<meta property="og:title" content="快速模式第三包收尾之quick_inI2()">
+<meta property="og:url" content="https://.github.io/blogs/2021/11/20/%E5%BF%AB%E9%80%9F%E6%A8%A1%E5%BC%8F%E7%AC%AC%E4%B8%89%E5%8C%85-2%20quick_inI2()/index.html">
+<meta property="og:site_name" content="遇见你是我最美丽的意外">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://raw.githubusercontent.com/Top-Fish/PhotoRepository/main/img/SSL-TLS/20211120205321.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/Top-Fish/PhotoRepository/main/img/SSL-TLS/20211120205604.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/Top-Fish/PhotoRepository/main/img/SSL-TLS/20211120205602.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/Top-Fish/PhotoRepository/main/img/SSL-TLS/20211120205609.gif">
+<meta property="og:image" content="https://raw.githubusercontent.com/Top-Fish/PhotoRepository/main/img/SSL-TLS/20211120205624.jpg">
+<meta property="article:published_time" content="2021-11-20T13:28:38.000Z">
+<meta property="article:modified_time" content="2021-11-20T14:51:33.929Z">
+<meta property="article:author" content="叨陪鲤">
+<meta property="article:tag" content="IPSec">
+<meta property="article:tag" content="openswan">
+<meta property="article:tag" content="VPN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/Top-Fish/PhotoRepository/main/img/SSL-TLS/20211120205321.png">
+
+<link rel="canonical" href="https://.github.io/blogs/2021/11/20/%E5%BF%AB%E9%80%9F%E6%A8%A1%E5%BC%8F%E7%AC%AC%E4%B8%89%E5%8C%85-2%20quick_inI2()/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>快速模式第三包收尾之quick_inI2() | 遇见你是我最美丽的意外</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/blogs/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">遇见你是我最美丽的意外</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">红红火火恍恍惚惚或</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-主页">
+
+    <a href="/blogs/" rel="section"><i class="fa fa-home fa-fw"></i>主页</a>
+
+  </li>
+        <li class="menu-item menu-item-标签">
+
+    <a href="/blogs/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-分类">
+
+    <a href="/blogs/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/blogs/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://.github.io/blogs/2021/11/20/%E5%BF%AB%E9%80%9F%E6%A8%A1%E5%BC%8F%E7%AC%AC%E4%B8%89%E5%8C%85-2%20quick_inI2()/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/blogs/images/me.jpg">
+      <meta itemprop="name" content="叨陪鲤">
+      <meta itemprop="description" content="他日趋庭，叨陪鲤对">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="遇见你是我最美丽的意外">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          快速模式第三包收尾之quick_inI2()
+        </h1>
+
+        <div class="post-meta">
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2021-11-20 21:28:38 / 修改时间：22:51:33" itemprop="dateCreated datePublished" datetime="2021-11-20T21:28:38+08:00">2021-11-20</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/blogs/categories/ipsec/" itemprop="url" rel="index"><span itemprop="name">IPSecVPN</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/blogs/categories/ipsec/openswan/" itemprop="url" rel="index"><span itemprop="name">openswan</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/blogs/2021/11/20/%E5%BF%AB%E9%80%9F%E6%A8%A1%E5%BC%8F%E7%AC%AC%E4%B8%89%E5%8C%85-2%20quick_inI2()/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/blogs/2021/11/20/%E5%BF%AB%E9%80%9F%E6%A8%A1%E5%BC%8F%E7%AC%AC%E4%B8%89%E5%8C%85-2%20quick_inI2()/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p><img src="https://raw.githubusercontent.com/Top-Fish/PhotoRepository/main/img/SSL-TLS/20211120205321.png" alt="image-20200913162318278"></p>
+<span id="more"></span>
+<h3 id="1-序言"><a href="#1-序言" class="headerlink" title="1. 序言"></a>1. 序言</h3><p>快速模式有三个报文交换，四个核心函数入口。我们已经对前三个函数处理流程对了一个简单的学习和这里，下面对第四个函数入口<code>quick_inI2()</code>的处理流程做一个简单的介绍。</p>
+<p>首先需要说明的是快速模式的前两个报文是为了协商感兴趣流的相关参数(如使用的加密算法、认证算法、封装方式、感兴趣流以及生成相关的密钥信息等)，而第三个报文则简单了很多：只是为了对前两个报文做认证。那么自然而然引出一个问题：为什么需要第三个报文呢？前两个报文不是已经包含HASH杂凑载荷吗？ 供大家思考吧。</p>
+<h3 id="2-quick-inI2-处理流程图"><a href="#2-quick-inI2-处理流程图" class="headerlink" title="2.  quick_inI2()处理流程图"></a>2.  quick_inI2()处理流程图</h3><p><code>quick_inI2()</code>的处理流程很简单，其中最主要的便是建立出站IPsecSA。（如果IPsec处理流程都是这种精简的，该多好呀:) :) ）</p>
+<p><img src="https://raw.githubusercontent.com/Top-Fish/PhotoRepository/main/img/SSL-TLS/20211120205604.png" alt="image-20200913164700196"></p>
+<h3 id="3-报文格式"><a href="#3-报文格式" class="headerlink" title="3.  报文格式"></a>3.  报文格式</h3><p><code>quick_inR1_outI2()</code>和<code>quick_inI2()</code>都是用来处理快速模式最后一个包的，报文格式完全一致。，<code>quick_inR1_outI2()</code>包括发送处理流程，而<code>quick_inI2()</code>则只为处理接收流程。</p>
+<p><img src="https://raw.githubusercontent.com/Top-Fish/PhotoRepository/main/img/SSL-TLS/20211120205602.png" alt="图片1"></p>
+<h3 id="4-quick-inI2-源码"><a href="#4-quick-inI2-源码" class="headerlink" title="4.  quick_inI2()源码"></a>4.  quick_inI2()源码</h3><p>这个源码主要流程很清晰（除了建立IPsecSA），代码也很少。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* Handle last message of Quick Mode.</span></span><br><span class="line"><span class="comment"> * HDR*, HASH(3) -&gt; done</span></span><br><span class="line"><span class="comment"> * (see RFC 2409 &quot;IKE&quot; 5.5)</span></span><br><span class="line"><span class="comment"> * Installs outbound IPsec SAs, routing, etc.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function">stf_status</span></span><br><span class="line"><span class="function"><span class="title">quick_inI2</span><span class="params">(struct msg_digest *md)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">state</span> *<span class="title">const</span> <span class="title">st</span> =</span> md-&gt;st;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* HASH(3) in */</span><span class="comment">/*验证哈希报文完整性*/</span></span><br><span class="line">    CHECK_QUICK_HASH(md, quick_mode_hash3(hash_val, st)</span><br><span class="line">	, <span class="string">&quot;HASH(3)&quot;</span>, <span class="string">&quot;Quick I2&quot;</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* Tell the kernel to establish the outbound and routing part of the new SA</span></span><br><span class="line"><span class="comment">     * (the previous state established inbound)</span></span><br><span class="line"><span class="comment">     * (unless the commit bit is set -- which we don&#x27;t support).</span></span><br><span class="line"><span class="comment">     * We do this before any state updating so that</span></span><br><span class="line"><span class="comment">     * failure won&#x27;t look like success.</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">if</span> (!install_ipsec_sa(md-&gt;pst, st, FALSE))</span><br><span class="line">	<span class="keyword">return</span> STF_INTERNAL_ERROR;</span><br><span class="line"></span><br><span class="line">    &#123;</span><br><span class="line">      DBG(DBG_CONTROLMORE, DBG_log(<span class="string">&quot;inI2: instance %s[%ld], setting newest_ipsec_sa to #%ld (was #%ld) (spd.eroute=#%ld)&quot;</span></span><br><span class="line">			       , st-&gt;st_connection-&gt;name</span><br><span class="line">			       , st-&gt;st_connection-&gt;instance_serial</span><br><span class="line">			       , st-&gt;st_serialno</span><br><span class="line">			       , st-&gt;st_connection-&gt;newest_ipsec_sa</span><br><span class="line">			       , st-&gt;st_connection-&gt;spd.eroute_owner));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    st-&gt;st_connection-&gt;newest_ipsec_sa = st-&gt;st_serialno;</span><br><span class="line"></span><br><span class="line">    update_iv(st);	<span class="comment">/* not actually used, but tidy */</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">/* note (presumed) success */</span></span><br><span class="line">    &#123;</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">gw_info</span> *<span class="title">gw</span> =</span> st-&gt;st_connection-&gt;gw_info;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> (gw != <span class="literal">NULL</span>)</span><br><span class="line">	    gw-&gt;key-&gt;last_worked_time = now();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* If we have dpd delay and dpdtimeout set, then we are doing DPD</span></span><br><span class="line"><span class="comment">	on this conn, so initialize it */</span></span><br><span class="line">    <span class="keyword">if</span>(st-&gt;st_connection-&gt;dpd_delay &amp;&amp; st-&gt;st_connection-&gt;dpd_timeout) &#123;</span><br><span class="line">	<span class="keyword">if</span>(dpd_init(st) != STF_OK) &#123;</span><br><span class="line">	    delete_ipsec_sa(st, FALSE);</span><br><span class="line">	    <span class="keyword">return</span> STF_FAIL;</span><br><span class="line">	&#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> STF_OK;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+
+
+<h3 id="4-其他接口说明"><a href="#4-其他接口说明" class="headerlink" title="4.  其他接口说明"></a>4.  其他接口说明</h3><h4 id="4-1-hash载荷计算方式"><a href="#4-1-hash载荷计算方式" class="headerlink" title="4.1  hash载荷计算方式"></a>4.1  hash载荷计算方式</h4><p>快速模式虽然仅有三个报文交互，但是它们的hash杂凑载荷的计算方式却不相同：</p>
+<ul>
+<li><input checked="" disabled="" type="checkbox"> 第①包计算方式：<br>$$<br>HASH(1) = PRF(SKEYID-a, MsgID | SA | Ni | [| IDi | IDr ])<br>$$</li>
+<li><input checked="" disabled="" type="checkbox"> 第②包计算方式：<br>$$<br>HASH(2) = PRF(SKEYID-a, MsgID | Ni | SA | Nr |      [| IDi | IDr ])<br>$$</li>
+<li><input checked="" disabled="" type="checkbox"> 第③包计算方式：</li>
+</ul>
+<p>$$<br>HASH(3) = PRF(SKEYID-a, 0 | MsgID | Ni | Nr)<br>$$</p>
+<hr>
+<ul>
+<li><p>第①包实现方式和第②包实现方式为同一个函数：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* Compute HASH(1), HASH(2) of Quick Mode.</span></span><br><span class="line"><span class="comment"> * HASH(1) is part of Quick I1 message.</span></span><br><span class="line"><span class="comment"> * HASH(2) is part of Quick R1 message.</span></span><br><span class="line"><span class="comment"> * Used by: quick_outI1, quick_inI1_outR1 (twice), quick_inR1_outI2</span></span><br><span class="line"><span class="comment"> * (see RFC 2409 &quot;IKE&quot; 5.5, pg. 18 or draft-ietf-ipsec-ike-01.txt 6.2 pg 25)</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">size_t</span></span></span><br><span class="line"><span class="function"><span class="title">quick_mode_hash12</span><span class="params">(u_char *dest, <span class="keyword">const</span> u_char *start, <span class="keyword">const</span> u_char *roof</span></span></span><br><span class="line"><span class="params"><span class="function">, <span class="keyword">const</span> struct state *st, <span class="keyword">const</span> <span class="keyword">msgid_t</span> *msgid, <span class="keyword">bool</span> hash2)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">hmac_ctx</span> <span class="title">ctx</span>;</span></span><br><span class="line"></span><br><span class="line">    hmac_init_chunk(&amp;ctx, st-&gt;st_oakley.prf_hasher, st-&gt;st_skeyid_a);<span class="comment">/*PRF算法 + 认证秘钥*/</span></span><br><span class="line">    </span><br><span class="line">    hmac_update(&amp;ctx, (<span class="keyword">const</span> <span class="keyword">void</span> *) msgid, <span class="keyword">sizeof</span>(<span class="keyword">msgid_t</span>));<span class="comment">/*填充msgid，由于认证需要msgid，而它唯一*/</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">if</span> (hash2)</span><br><span class="line">		hmac_update_chunk(&amp;ctx, st-&gt;st_ni);	<span class="comment">/* include Ni_b in the hash */</span></span><br><span class="line">    </span><br><span class="line">    hmac_update(&amp;ctx, start, roof-start);<span class="comment">/*数据起始位置和终止位置*/</span></span><br><span class="line">    hmac_final(dest, &amp;ctx);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> ctx.hmac_digest_len;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
+<li><p>第③包实现方式：</p>
+</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* Compute HASH(3) in Quick Mode (part of Quick I2 message).</span></span><br><span class="line"><span class="comment"> * Used by: quick_inR1_outI2, quick_inI2</span></span><br><span class="line"><span class="comment"> * See RFC2409 &quot;The Internet Key Exchange (IKE)&quot; 5.5.</span></span><br><span class="line"><span class="comment"> * <span class="doctag">NOTE:</span> this hash (unlike HASH(1) and HASH(2)) ONLY covers the</span></span><br><span class="line"><span class="comment"> * Message ID and Nonces.  This is a mistake.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">size_t</span></span></span><br><span class="line"><span class="function"><span class="title">quick_mode_hash3</span><span class="params">(u_char *dest, struct state *st)</span><span class="comment">/*第二阶段的三个报文hash值算法方式各不相同*/</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">hmac_ctx</span> <span class="title">ctx</span>;</span></span><br><span class="line"></span><br><span class="line">    hmac_init_chunk(&amp;ctx, st-&gt;st_oakley.prf_hasher, st-&gt;st_skeyid_a);</span><br><span class="line">    hmac_update(&amp;ctx, (<span class="keyword">const</span> u_char *)<span class="string">&quot;\0&quot;</span>, <span class="number">1</span>);</span><br><span class="line">    hmac_update(&amp;ctx, (u_char *) &amp;st-&gt;st_msgid, <span class="keyword">sizeof</span>(st-&gt;st_msgid));</span><br><span class="line">    hmac_update_chunk(&amp;ctx, st-&gt;st_ni);</span><br><span class="line">    hmac_update_chunk(&amp;ctx, st-&gt;st_nr);</span><br><span class="line">    hmac_final(dest, &amp;ctx);</span><br><span class="line">    DBG_cond_dump(DBG_CRYPT, <span class="string">&quot;HASH(3) computed:&quot;</span>, dest, ctx.hmac_digest_len);</span><br><span class="line">    <span class="keyword">return</span> ctx.hmac_digest_len;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="4-2-install-ipsec-sa"><a href="#4-2-install-ipsec-sa" class="headerlink" title="4.2  install_ipsec_sa"></a>4.2  install_ipsec_sa</h4><img src="https://raw.githubusercontent.com/Top-Fish/PhotoRepository/main/img/SSL-TLS/20211120205609.gif" alt="timg22" style="zoom:50%;" />
+
+<h3 id="5-小结"><a href="#5-小结" class="headerlink" title="5. 小结"></a>5. 小结</h3><p><img src="https://raw.githubusercontent.com/Top-Fish/PhotoRepository/main/img/SSL-TLS/20211120205624.jpg" alt="img"></p>
+<p>IPsec协商流程之主模式+快速模式学习跨度比较久（3个月多），协商流程却是很复杂，而且只是看原理性知识，很多功能都没有敢去涉及，如证书认证、out_sa、 DPD、建立IPsecSA、NAT-T等等。学习期间最主要的体会是：openswan封装了很多很多接口，常用接口需要好好学习，否则在看代码时很困难。就拿<code>out_sa</code> 、<code>out_struct</code>、<code>out_generic</code>等系列，能恶心死人，全文基本都用这几个接口在封装报文和解封装报文，可以说这些基本函数是看openswan源码的接口。</p>
+<p>后面计划继续更新几个函数接口实现，也是以前学习整理过程中遗留的坑，先填几个然后在更新学习其他流程。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/blogs/tags/ipsec/" rel="tag"># IPSec</a>
+              <a href="/blogs/tags/openswan/" rel="tag"># openswan</a>
+              <a href="/blogs/tags/VPN/" rel="tag"># VPN</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/blogs/2021/11/20/%E5%BF%AB%E9%80%9F%E6%A8%A1%E5%BC%8F%E7%AC%AC%E4%B8%89%E5%8C%85%20quick_inR1_outI2()/" rel="prev" title="快速模式第三包之quick_inR1_outI2()">
+      <i class="fa fa-chevron-left"></i> 快速模式第三包之quick_inR1_outI2()
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/blogs/2021/11/20/%E4%B8%BB%E6%A8%A1%E5%BC%8F%E7%AC%AC%E5%9B%9B%E5%8C%85%EF%BC%9Amain_inI2_outR2/" rel="next" title="主模式第四包：main_inI2_outR2">
+      主模式第四包：main_inI2_outR2 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E5%BA%8F%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">1. 序言</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-quick-inI2-%E5%A4%84%E7%90%86%E6%B5%81%E7%A8%8B%E5%9B%BE"><span class="nav-number">2.</span> <span class="nav-text">2.  quick_inI2()处理流程图</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E6%8A%A5%E6%96%87%E6%A0%BC%E5%BC%8F"><span class="nav-number">3.</span> <span class="nav-text">3.  报文格式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-quick-inI2-%E6%BA%90%E7%A0%81"><span class="nav-number">4.</span> <span class="nav-text">4.  quick_inI2()源码</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-%E5%85%B6%E4%BB%96%E6%8E%A5%E5%8F%A3%E8%AF%B4%E6%98%8E"><span class="nav-number">5.</span> <span class="nav-text">4.  其他接口说明</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#4-1-hash%E8%BD%BD%E8%8D%B7%E8%AE%A1%E7%AE%97%E6%96%B9%E5%BC%8F"><span class="nav-number">5.1.</span> <span class="nav-text">4.1  hash载荷计算方式</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-2-install-ipsec-sa"><span class="nav-number">5.2.</span> <span class="nav-text">4.2  install_ipsec_sa</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-%E5%B0%8F%E7%BB%93"><span class="nav-number">6.</span> <span class="nav-text">5. 小结</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="叨陪鲤"
+      src="/blogs/images/me.jpg">
+  <p class="site-author-name" itemprop="name">叨陪鲤</p>
+  <div class="site-description" itemprop="description">他日趋庭，叨陪鲤对</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/blogs/archives/">
+        
+          <span class="site-state-item-count">14</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/blogs/categories/">
+        <span class="site-state-item-count">3</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/blogs/tags/">
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div>
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<span id="busuanzi_container_site_pv" style='display:none'>
+    本站总访问量 <span id="busuanzi_value_site_pv"></span> 次
+    <span class="post-meta-divider">|</span>
+</span>
+<span id="busuanzi_container_site_uv" style='display:none'>
+    有<span id="busuanzi_value_site_uv"></span>人看过我的博客啦
+</span>
+</div>
+
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">叨陪鲤</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> 强力驱动
+  </div>
+
+
+    <script async src="//dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+        
+<div class="busuanzi-count">
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/blogs/lib/anime.min.js"></script>
+  <script src="/blogs/lib/pjax/pjax.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="/blogs/lib/velocity/velocity.min.js"></script>
+  <script src="/blogs/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/blogs/js/utils.js"></script>
+
+<script src="/blogs/js/motion.js"></script>
+
+
+<script src="/blogs/js/schemes/muse.js"></script>
+
+
+<script src="/blogs/js/next-boot.js"></script>
+
+  <script>
+var pjax = new Pjax({
+  selectors: [
+    'head title',
+    '#page-configurations',
+    '.content-wrap',
+    '.post-toc-wrap',
+    '.languages',
+    '#pjax'
+  ],
+  switches: {
+    '.post-toc-wrap': Pjax.switches.innerHTML
+  },
+  analytics: false,
+  cacheBust: false,
+  scrollTo : !CONFIG.bookmark.enable
+});
+
+window.addEventListener('pjax:success', () => {
+  document.querySelectorAll('script[data-pjax], script#page-configurations, #pjax script').forEach(element => {
+    var code = element.text || element.textContent || element.innerHTML || '';
+    var parent = element.parentNode;
+    parent.removeChild(element);
+    var script = document.createElement('script');
+    if (element.id) {
+      script.id = element.id;
+    }
+    if (element.className) {
+      script.className = element.className;
+    }
+    if (element.type) {
+      script.type = element.type;
+    }
+    if (element.src) {
+      script.src = element.src;
+      // Force synchronous loading of peripheral JS.
+      script.async = false;
+    }
+    if (element.dataset.pjax !== undefined) {
+      script.dataset.pjax = '';
+    }
+    if (code !== '') {
+      script.appendChild(document.createTextNode(code));
+    }
+    parent.appendChild(script);
+  });
+  NexT.boot.refresh();
+  // Define Motion Sequence & Bootstrap Motion.
+  if (CONFIG.motion.enable) {
+    NexT.motion.integrator
+      .init()
+      .add(NexT.motion.middleWares.subMenu)
+      .add(NexT.motion.middleWares.postList)
+      .bootstrap();
+  }
+  NexT.utils.updateSidebarPosition();
+});
+</script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/blogs/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <div id="pjax">
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('[object Object]', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'MQdIgAGKML1LrVfkG1rbQUgO-gzGzoHsz',
+      appKey     : '3ECTEO4bp11EiKGpp4bTd07P',
+      placeholder: "欢迎留言交流学习！",
+      avatar     : 'robohash',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : 'en, zh-cn' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+    </div>
+</body>
+</html>

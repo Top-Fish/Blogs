@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/blogs/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/blogs/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/blogs/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/blogs/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/blogs/css/main.css">
+
+
+<link rel="stylesheet" href="/blogs/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":".github.io","root":"/blogs/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"always","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"buttons","active":"valine","storage":true,"lazyload":false,"nav":null,"activeClass":"valine"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="1. 序言openswan源码中有关隧道协商的文章已经比较久没有更新了，那么从这篇开始再重新回到更新流程上。这中间停了将近2个月，第一个月几乎没有更新任何博客，而第二个月主要整理翻译QAT相关的文章，接下来我将继续更新openswan源码相关的内容。 下面开始介绍IPSec 快速模式协商流程中的第①包，主要函数的入口为**quick_outI1()**：">
+<meta property="og:type" content="article">
+<meta property="og:title" content="快速模式第一包之quick_outI1()">
+<meta property="og:url" content="https://.github.io/blogs/2021/11/20/%E5%BF%AB%E9%80%9F%E6%A8%A1%E5%BC%8F%E7%AC%AC%E4%B8%80%E5%8C%85%EF%BC%9Aquick_outI1/index.html">
+<meta property="og:site_name" content="遇见你是我最美丽的意外">
+<meta property="og:description" content="1. 序言openswan源码中有关隧道协商的文章已经比较久没有更新了，那么从这篇开始再重新回到更新流程上。这中间停了将近2个月，第一个月几乎没有更新任何博客，而第二个月主要整理翻译QAT相关的文章，接下来我将继续更新openswan源码相关的内容。 下面开始介绍IPSec 快速模式协商流程中的第①包，主要函数的入口为**quick_outI1()**：">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://raw.githubusercontent.com/Top-Fish/PhotoRepository/main/img/SSL-TLS/20211120205311.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/Top-Fish/PhotoRepository/main/img/SSL-TLS/20211120205313.png">
+<meta property="og:image" content="f:%5C%E9%9A%8F%E7%AC%94%5Copenswan%5C%E5%BF%AB%E9%80%9F%E6%A8%A1%E5%BC%8F%E7%AC%AC%E4%B8%80%E5%8C%85%EF%BC%9Aquick_outI1.assets%5C433F992D.gif">
+<meta property="og:image" content="f:%5C%E9%9A%8F%E7%AC%94%5Copenswan%5C%E5%BF%AB%E9%80%9F%E6%A8%A1%E5%BC%8F%E7%AC%AC%E4%B8%80%E5%8C%85%EF%BC%9Aquick_outI1.assets%5Cimage-20200827002952001.png">
+<meta property="article:published_time" content="2021-11-20T13:28:38.000Z">
+<meta property="article:modified_time" content="2021-11-20T14:53:30.473Z">
+<meta property="article:author" content="叨陪鲤">
+<meta property="article:tag" content="IPSec">
+<meta property="article:tag" content="openswan">
+<meta property="article:tag" content="VPN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/Top-Fish/PhotoRepository/main/img/SSL-TLS/20211120205311.png">
+
+<link rel="canonical" href="https://.github.io/blogs/2021/11/20/%E5%BF%AB%E9%80%9F%E6%A8%A1%E5%BC%8F%E7%AC%AC%E4%B8%80%E5%8C%85%EF%BC%9Aquick_outI1/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>快速模式第一包之quick_outI1() | 遇见你是我最美丽的意外</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/blogs/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">遇见你是我最美丽的意外</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">红红火火恍恍惚惚或</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-主页">
+
+    <a href="/blogs/" rel="section"><i class="fa fa-home fa-fw"></i>主页</a>
+
+  </li>
+        <li class="menu-item menu-item-标签">
+
+    <a href="/blogs/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-分类">
+
+    <a href="/blogs/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/blogs/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://.github.io/blogs/2021/11/20/%E5%BF%AB%E9%80%9F%E6%A8%A1%E5%BC%8F%E7%AC%AC%E4%B8%80%E5%8C%85%EF%BC%9Aquick_outI1/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/blogs/images/me.jpg">
+      <meta itemprop="name" content="叨陪鲤">
+      <meta itemprop="description" content="他日趋庭，叨陪鲤对">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="遇见你是我最美丽的意外">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          快速模式第一包之quick_outI1()
+        </h1>
+
+        <div class="post-meta">
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2021-11-20 21:28:38 / 修改时间：22:53:30" itemprop="dateCreated datePublished" datetime="2021-11-20T21:28:38+08:00">2021-11-20</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/blogs/categories/ipsec/" itemprop="url" rel="index"><span itemprop="name">IPSecVPN</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/blogs/categories/ipsec/openswan/" itemprop="url" rel="index"><span itemprop="name">openswan</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/blogs/2021/11/20/%E5%BF%AB%E9%80%9F%E6%A8%A1%E5%BC%8F%E7%AC%AC%E4%B8%80%E5%8C%85%EF%BC%9Aquick_outI1/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/blogs/2021/11/20/%E5%BF%AB%E9%80%9F%E6%A8%A1%E5%BC%8F%E7%AC%AC%E4%B8%80%E5%8C%85%EF%BC%9Aquick_outI1/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h3 id="1-序言"><a href="#1-序言" class="headerlink" title="1. 序言"></a>1. 序言</h3><p>openswan源码中有关隧道协商的文章已经比较久没有更新了，那么从这篇开始再重新回到更新流程上。这中间停了将近2个月，第一个月几乎没有更新任何博客，而第二个月主要整理翻译QAT相关的文章，接下来我将继续更新openswan源码相关的内容。</p>
+<p>下面开始介绍IPSec 快速模式协商流程中的第①包，主要函数的入口为**quick_outI1()**：</p>
+<span id="more"></span>
+<p><img src="https://raw.githubusercontent.com/Top-Fish/PhotoRepository/main/img/SSL-TLS/20211120205311.png" alt="image-20200826002057928"></p>
+<h3 id="2-quick-outI1-流程图"><a href="#2-quick-outI1-流程图" class="headerlink" title="2. quick_outI1()流程图"></a>2. quick_outI1()流程图</h3><p><img src="https://raw.githubusercontent.com/Top-Fish/PhotoRepository/main/img/SSL-TLS/20211120205313.png" alt="image-20200826003329910"></p>
+<h3 id="3-quick-outI1-源码分析"><a href="#3-quick-outI1-源码分析" class="headerlink" title="3. quick_outI1()源码分析"></a>3. quick_outI1()源码分析</h3><p><code>quick_outI1()</code>接口是第二阶段快速模式第一包的入口函数，它最主要的工作就是将==第一阶段协商的ipsecsa状态信息转换为第二阶段的状态信息==。通过<code>duplicate_state</code>实现状态的拷贝，然后将新的状态插入到全局的状态表中。之后就是根据隧道的配置信息(PFS, 算法信息)等做秘钥申请等准备工作。</p>
+<ul>
+<li><input checked="" disabled="" type="checkbox"> <strong>复制第一阶段ipsecsa状态，并将其插入全局状态表中</strong></li>
+<li><input checked="" disabled="" type="checkbox"> <strong>显示第二阶段算法相关的debug信息</strong></li>
+<li><input checked="" disabled="" type="checkbox"> <strong>根据配置做秘钥申请</strong></li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">stf_status</span></span><br><span class="line"><span class="function"><span class="title">quick_outI1</span><span class="params">(<span class="keyword">int</span> whack_sock</span></span></span><br><span class="line"><span class="params"><span class="function">	    , struct state *isakmp_sa</span></span></span><br><span class="line"><span class="params"><span class="function">	    , struct connection *c</span></span></span><br><span class="line"><span class="params"><span class="function">	    , <span class="keyword">lset_t</span> policy</span></span></span><br><span class="line"><span class="params"><span class="function">	    , <span class="keyword">unsigned</span> <span class="keyword">long</span> <span class="keyword">try</span></span></span></span><br><span class="line"><span class="params"><span class="function">	    , <span class="keyword">so_serial_t</span> replacing</span></span></span><br><span class="line"><span class="params"><span class="function">	    , struct xfrm_user_sec_ctx_ike * uctx UNUSED</span></span></span><br><span class="line"><span class="params"><span class="function">	    )</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">state</span> *<span class="title">st</span> =</span> duplicate_state(isakmp_sa);<span class="comment">/*复制第一阶段的状态,包括了所有的基本信息*/</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">qke_continuation</span> *<span class="title">qke</span>;</span></span><br><span class="line">    stf_status e;</span><br><span class="line">    <span class="keyword">const</span> <span class="keyword">char</span> *pfsgroupname;</span><br><span class="line">    <span class="keyword">char</span> p2alg[<span class="number">256</span>];</span><br><span class="line"></span><br><span class="line">    st-&gt;st_whack_sock = whack_sock;</span><br><span class="line">    st-&gt;st_connection = c;<span class="comment">/*从这里可以看出每一个连接c可对应多个state结构，比如一个phase1,一个phase2.因此在隧道状态时需要特别注意*/</span></span><br><span class="line">    passert(c != <span class="literal">NULL</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span>(st-&gt;st_calculating) &#123;</span><br><span class="line">	<span class="keyword">return</span> STF_IGNORE; </span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    set_cur_state(st);	<span class="comment">/* we must reset before exit */</span></span><br><span class="line">    st-&gt;st_policy = policy;</span><br><span class="line">    st-&gt;st_try = <span class="keyword">try</span>;</span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">ifdef</span> HAVE_LABELED_IPSEC</span></span><br><span class="line">    st-&gt;sec_ctx=<span class="literal">NULL</span>;</span><br><span class="line">    <span class="keyword">if</span>(uctx != <span class="literal">NULL</span>) &#123;</span><br><span class="line">    st-&gt;sec_ctx = clone_thing(*uctx, <span class="string">&quot;sec ctx structure&quot;</span>);</span><br><span class="line">    DBG(DBG_CONTROL, DBG_log(<span class="string">&quot;pending phase 2 with security context %s, %d&quot;</span>, st-&gt;sec_ctx-&gt;sec_ctx_value, st-&gt;sec_ctx-&gt;ctx_len));</span><br><span class="line">    &#125;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line">	<span class="comment">/*本端协议、对端协议、本端端口、对端端口*/</span></span><br><span class="line">    st-&gt;st_myuserprotoid   = c-&gt;spd.<span class="keyword">this</span>.protocol;</span><br><span class="line">    st-&gt;st_peeruserprotoid = c-&gt;spd.that.protocol;</span><br><span class="line">    st-&gt;st_myuserport       = c-&gt;spd.<span class="keyword">this</span>.port;</span><br><span class="line">    st-&gt;st_peeruserport     = c-&gt;spd.that.port;</span><br><span class="line"></span><br><span class="line">    st-&gt;st_msgid = generate_msgid(isakmp_sa);<span class="comment">/*随机生成唯一的msgid*/</span></span><br><span class="line">    change_state(st, STATE_QUICK_I1);<span class="comment">/*设置当前状态为STATE_QUICK_I1*/</span></span><br><span class="line"></span><br><span class="line">    insert_state(st);	<span class="comment">/* needs cookies, connection, and msgid */</span></span><br><span class="line"></span><br><span class="line">    <span class="built_in">strcpy</span>(p2alg, <span class="string">&quot;defaults&quot;</span>);</span><br><span class="line">    <span class="keyword">if</span>(st-&gt;st_connection-&gt;alg_info_esp) &#123;<span class="comment">/*将alg_info_esp中的算法(第二阶段算法信息)解析转换为字符串，存储在p2alg*/</span></span><br><span class="line">	alg_info_snprint_phase2(p2alg, <span class="keyword">sizeof</span>(p2alg)<span class="comment">/*只是为了显示使用*/</span></span><br><span class="line">				, (struct alg_info_esp *)st-&gt;st_connection-&gt;alg_info_esp);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    pfsgroupname=<span class="string">&quot;no-pfs&quot;</span>;</span><br><span class="line">    <span class="comment">/*</span></span><br><span class="line"><span class="comment">     * See if pfs_group has been specified for this conn,</span></span><br><span class="line"><span class="comment">     * if not, fallback to old use-same-as-P1 behaviour</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">if</span> (st-&gt;st_connection) &#123;<span class="comment">/*获取pfs组*/</span></span><br><span class="line">	st-&gt;st_pfs_group = ike_alg_pfsgroup(st-&gt;st_connection</span><br><span class="line">					    , st-&gt;st_policy);</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* If PFS specified, use the same group as during Phase 1:</span></span><br><span class="line"><span class="comment">     * since no negotiation is possible, we pick one that is</span></span><br><span class="line"><span class="comment">     * very likely supported.</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">if</span> (!st-&gt;st_pfs_group)</span><br><span class="line">	    st-&gt;st_pfs_group = policy &amp; POLICY_PFS? isakmp_sa-&gt;st_oakley.group : <span class="literal">NULL</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span>(policy &amp; POLICY_PFS &amp;&amp; st-&gt;st_pfs_group) &#123;</span><br><span class="line">	pfsgroupname = enum_name(&amp;oakley_group_names, st-&gt;st_pfs_group-&gt;group);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    &#123;</span><br><span class="line">	<span class="keyword">char</span> replacestr[<span class="number">32</span>];</span><br><span class="line"></span><br><span class="line">	replacestr[<span class="number">0</span>]=<span class="string">&#x27;\0&#x27;</span>;</span><br><span class="line">	<span class="keyword">if</span>(replacing != SOS_NOBODY)</span><br><span class="line">	    <span class="built_in">snprintf</span>(replacestr, <span class="number">32</span>, <span class="string">&quot; to replace #%lu&quot;</span>, replacing);</span><br><span class="line"></span><br><span class="line">	openswan_log(<span class="string">&quot;initiating Quick Mode %s%s &#123;using isakmp#%lu msgid:%08x proposal=%s pfsgroup=%s&#125;&quot;</span></span><br><span class="line">		     , prettypolicy(policy)</span><br><span class="line">		     , replacestr</span><br><span class="line">		     , isakmp_sa-&gt;st_serialno, st-&gt;st_msgid, p2alg, pfsgroupname);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    qke = alloc_thing(struct qke_continuation , <span class="string">&quot;quick_outI1 KE&quot;</span>);</span><br><span class="line">    qke-&gt;replacing = replacing;</span><br><span class="line">    pcrc_init(&amp;qke-&gt;qke_pcrc);</span><br><span class="line">    qke-&gt;qke_pcrc.pcrc_func = quick_outI1_continue;<span class="comment">/*对于KE载荷、NONCE载荷的填充是在此回调函数中实现的*/</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span>(policy &amp; POLICY_PFS) &#123;<span class="comment">/*生成KE载荷*/</span></span><br><span class="line">	e=build_ke(&amp;qke-&gt;qke_pcrc, st, st-&gt;st_pfs_group, st-&gt;st_import);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;<span class="comment">/*生成NONCE载荷*/</span></span><br><span class="line">	e=build_nonce(&amp;qke-&gt;qke_pcrc, st, st-&gt;st_import);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    reset_globals();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> e;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这个函数中应该注意到一点：就是<strong>一个connection(隧道)可以对应多个state结构</strong>。这有什么影响呢？</p>
+<p>我们在查询隧道状态时，是通过查询该隧道(connection)对应的state来获取到协商的阶段，但是我们在遍历全局state表时只有全部遍历一遍才能查到最新的协商阶段，否则可能只是查询其中的一个state,这个可能不是最新的state。这样的话如果不采用效率高的数据结构存储状态，随着state增多，遍历的效率会很低。</p>
+<p><strong>PFS（Perfect Forward Secrecy，完善的前向安全性）</strong>是一种安全特性，指一个密钥被破解(例如说协商的第一阶段秘钥被破解)，并不影响第二阶段密钥的安全性，因为这些密钥间没有派生关系。此特性是通过在IKE第二阶段的协商中增加密钥交换来实现的，因此源码实现中，如果策略启动了PFS，则再次增加一个KE载荷进行秘钥交换。</p>
+<h3 id="4-quick-outI1-continue-源码分析"><a href="#4-quick-outI1-continue-源码分析" class="headerlink" title="4. quick_outI1_continue()源码分析"></a>4. quick_outI1_continue()源码分析</h3><p>这个continue函数与之前的函数功能基本一致，通过pcrc中的状态序号获取到相应的状态，然后调用后续的函数进行报文封装操作。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">void</span></span></span><br><span class="line"><span class="function"><span class="title">quick_outI1_continue</span><span class="params">(struct pluto_crypto_req_cont *pcrc</span></span></span><br><span class="line"><span class="params"><span class="function">		     , struct pluto_crypto_req *r</span></span></span><br><span class="line"><span class="params"><span class="function">		     , <span class="keyword">err_t</span> ugh)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">qke_continuation</span> *<span class="title">qke</span> =</span> (struct qke_continuation *)pcrc;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">state</span> *<span class="title">const</span> <span class="title">st</span> =</span> state_with_serialno(qke-&gt;qke_pcrc.pcrc_serialno);<span class="comment">/*一个效率比较低的接口*/</span></span><br><span class="line">    stf_status e;</span><br><span class="line"></span><br><span class="line">    DBG(DBG_CONTROLMORE</span><br><span class="line">	, DBG_log(<span class="string">&quot;quick outI1: calculated ke+nonce, sending I1&quot;</span>));</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (st == <span class="literal">NULL</span>) &#123;</span><br><span class="line">	loglog(RC_LOG_SERIOUS, <span class="string">&quot;%s: Request was disconnected from state&quot;</span>,</span><br><span class="line">		__FUNCTION__);</span><br><span class="line">	<span class="keyword">if</span> (qke-&gt;md)</span><br><span class="line">	    release_md(qke-&gt;md);</span><br><span class="line">	<span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    st-&gt;st_calculating = FALSE;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* XXX should check out ugh */</span></span><br><span class="line">    passert(ugh == <span class="literal">NULL</span>);</span><br><span class="line">    passert(cur_state == <span class="literal">NULL</span>);</span><br><span class="line">    passert(st != <span class="literal">NULL</span>);</span><br><span class="line"></span><br><span class="line">    set_cur_state(st);	<span class="comment">/* we must reset before exit */</span></span><br><span class="line">    set_suspended(st, <span class="literal">NULL</span>);</span><br><span class="line">    e = quick_outI1_tail(pcrc, r, st);</span><br><span class="line">    <span class="keyword">if</span> (e == STF_INTERNAL_ERROR)</span><br><span class="line">	loglog(RC_LOG_SERIOUS, <span class="string">&quot;%s: quick_outI1_tail() failed with STF_INTERNAL_ERROR&quot;</span>, __FUNCTION__);</span><br><span class="line"></span><br><span class="line">    reset_globals();</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>这个有一个需要说明的地方，<code>state_with_serialno</code>函数需要遍历全局state哈希表，虽然O(n)的时间复杂度，但是如果state结构非常多的情况下，效率很低。因此如果应用场景中可添加的隧道比较多(成百上千条)，那么需要对该接口进行优化。</p>
+<p><code>state_with_serialno()</code>源码实现如下：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* Find the state object with this serial number.</span></span><br><span class="line"><span class="comment"> * This allows state object references that don&#x27;t turn into dangerous</span></span><br><span class="line"><span class="comment"> * dangling pointers: reference a state by its serial number.</span></span><br><span class="line"><span class="comment"> * Returns NULL if there is no such state.</span></span><br><span class="line"><span class="comment"> * If this turns out to be a significant CPU hog, it could be</span></span><br><span class="line"><span class="comment"> * improved to use a hash table rather than sequential seartch.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function">struct state *</span></span><br><span class="line"><span class="function"><span class="title">state_with_serialno</span><span class="params">(<span class="keyword">so_serial_t</span> sn)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (sn &gt;= SOS_FIRST)</span><br><span class="line">    &#123;</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">state</span> *<span class="title">st</span>;</span></span><br><span class="line">	<span class="keyword">int</span> i;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">for</span> (i = <span class="number">0</span>; i &lt; STATE_TABLE_SIZE; i++)</span><br><span class="line">	    <span class="keyword">for</span> (st = statetable[i]; st != <span class="literal">NULL</span>; st = st-&gt;st_hashchain_next)</span><br><span class="line">		<span class="keyword">if</span> (st-&gt;st_serialno == sn)</span><br><span class="line">		    <span class="keyword">return</span> st;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="5-quick-outI1-tail-源码分析"><a href="#5-quick-outI1-tail-源码分析" class="headerlink" title="5. quick_outI1_tail()源码分析"></a>5. quick_outI1_tail()源码分析</h3><p>quick_outI1_tail()函数的作用：构造第二阶段首包报文，他包括：</p>
+<ul>
+<li><input checked="" disabled="" type="checkbox"> 第二阶段的加解密算法、哈希(认证)算法、PFS等策略信息<ul>
+<li><input disabled="" type="checkbox"> <strong>构造SA建议载荷out_sa()</strong></li>
+</ul>
+</li>
+<li><input checked="" disabled="" type="checkbox"> 如果启动PFS，则重新进行秘钥交换，生成KE载荷</li>
+<li><input checked="" disabled="" type="checkbox"> 生成Nonce载荷</li>
+<li><input checked="" disabled="" type="checkbox"> 构造本端标识和对端标识载荷</li>
+<li><input checked="" disabled="" type="checkbox"> NAT穿越中的 OA载荷</li>
+<li><input checked="" disabled="" type="checkbox"> ==计算报文的完整性(哈希算法)==</li>
+<li><input checked="" disabled="" type="checkbox"> ==对报文进行加密==</li>
+</ul>
+<p>源码如下：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br><span class="line">198</span><br><span class="line">199</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">static</span> stf_status</span></span><br><span class="line"><span class="function"><span class="title">quick_outI1_tail</span><span class="params">(struct pluto_crypto_req_cont *pcrc</span></span></span><br><span class="line"><span class="params"><span class="function">		 , struct pluto_crypto_req *r</span></span></span><br><span class="line"><span class="params"><span class="function">		 , struct state *st)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">qke_continuation</span> *<span class="title">qke</span> =</span> (struct qke_continuation *)pcrc;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">state</span> *<span class="title">isakmp_sa</span> =</span> state_with_serialno(st-&gt;st_clonedfrom);</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">connection</span> *<span class="title">c</span> =</span> st-&gt;st_connection;</span><br><span class="line">    pb_stream rbody;</span><br><span class="line">    u_char	<span class="comment">/* set by START_HASH_PAYLOAD: */</span></span><br><span class="line">	*r_hashval,	<span class="comment">/* where in reply to jam hash value */</span></span><br><span class="line">	*r_hash_start;	<span class="comment">/* start of what is to be hashed */</span><span class="comment">/*用来记录需要计算hash的起始位置*/</span></span><br><span class="line">    <span class="keyword">bool</span> has_client = c-&gt;spd.<span class="keyword">this</span>.has_client || c-&gt;spd.that.has_client ||</span><br><span class="line">		      	     c-&gt;spd.<span class="keyword">this</span>.protocol    || c-&gt;spd.that.protocol   ||</span><br><span class="line">		            c-&gt;spd.<span class="keyword">this</span>.port         || c-&gt;spd.that.port;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span>(isakmp_sa == <span class="literal">NULL</span>) &#123;</span><br><span class="line">	<span class="comment">/* phase1 state got deleted while cryptohelper was working */</span></span><br><span class="line">	loglog(RC_LOG_SERIOUS,<span class="string">&quot;phase2 initiation failed because parent ISAKMP #%lu is gone&quot;</span>, st-&gt;st_clonedfrom);</span><br><span class="line">	<span class="keyword">return</span> STF_FATAL;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">ifdef</span> NAT_TRAVERSAL</span></span><br><span class="line">    <span class="keyword">if</span> (isakmp_sa-&gt;hidden_variables.st_nat_traversal &amp; NAT_T_DETECTED) &#123;<span class="comment">/*第一阶段协商过程中发现存在NAT设备*/</span></span><br><span class="line">       <span class="comment">/* Duplicate nat_traversal status in new state */</span><span class="comment">/*将NAT信息存储在新的state上*/</span></span><br><span class="line">       st-&gt;hidden_variables.st_nat_traversal = isakmp_sa-&gt;hidden_variables.st_nat_traversal;</span><br><span class="line">       <span class="keyword">if</span> (isakmp_sa-&gt;hidden_variables.st_nat_traversal &amp; LELEM(NAT_TRAVERSAL_NAT_BHND_ME)) &#123;<span class="comment">/*本端位于NAT之后*/</span></span><br><span class="line"> 	  has_client = TRUE;</span><br><span class="line">       &#125;<span class="comment">/*确定端口浮动后的出接口*/</span></span><br><span class="line">       nat_traversal_change_port_lookup(<span class="literal">NULL</span>, st);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> &#123;</span><br><span class="line">       st-&gt;hidden_variables.st_nat_traversal = <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line"></span><br><span class="line">    <span class="comment">/* set up reply */</span></span><br><span class="line">    init_pbs(&amp;reply_stream, reply_buffer, <span class="keyword">sizeof</span>(reply_buffer), <span class="string">&quot;reply packet&quot;</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* HDR* out */</span><span class="comment">/*填充第二阶段的ISAKMP的头部*/</span></span><br><span class="line">    &#123;</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">isakmp_hdr</span> <span class="title">hdr</span>;</span></span><br><span class="line"></span><br><span class="line">	hdr.isa_version = ISAKMP_MAJOR_VERSION &lt;&lt; ISA_MAJ_SHIFT | ISAKMP_MINOR_VERSION;</span><br><span class="line">	hdr.isa_np = ISAKMP_NEXT_HASH;</span><br><span class="line">	hdr.isa_xchg = ISAKMP_XCHG_QUICK;</span><br><span class="line">	hdr.isa_msgid = st-&gt;st_msgid;</span><br><span class="line">	hdr.isa_flags = ISAKMP_FLAG_ENCRYPTION;</span><br><span class="line">	<span class="built_in">memcpy</span>(hdr.isa_icookie, st-&gt;st_icookie, COOKIE_SIZE);</span><br><span class="line">	<span class="built_in">memcpy</span>(hdr.isa_rcookie, st-&gt;st_rcookie, COOKIE_SIZE);</span><br><span class="line">	<span class="keyword">if</span> (!out_struct(&amp;hdr, &amp;isakmp_hdr_desc, &amp;reply_stream, &amp;rbody))<span class="comment">/*填充到报文中*/</span></span><br><span class="line">	&#123;</span><br><span class="line">	    reset_cur_state();</span><br><span class="line">	    <span class="keyword">return</span> STF_INTERNAL_ERROR;</span><br><span class="line">	&#125;</span><br><span class="line">    &#125;</span><br><span class="line">   <span class="comment">/*填充hash载荷头部，数据部分全零，并记录下要填充hash的位置，最后填充*/</span></span><br><span class="line">    <span class="comment">/* HASH(1) -- create and note space to be filled later */</span></span><br><span class="line">    START_HASH_PAYLOAD(rbody, ISAKMP_NEXT_SA);</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* SA out */</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">/* Emit SA payload based on a subset of the policy bits.</span></span><br><span class="line"><span class="comment">     * POLICY_COMPRESS is considered iff we can do IPcomp.</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">lset_t</span> pm = POLICY_ENCRYPT | POLICY_AUTHENTICATE;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (can_do_IPcomp)</span><br><span class="line">            pm |= POLICY_COMPRESS;</span><br><span class="line">    <span class="comment">/*填充sa载荷: ESP AH IPCom*/</span></span><br><span class="line">        <span class="keyword">if</span> (!out_sa(&amp;rbody</span><br><span class="line">                , &amp;ipsec_sadb[(st-&gt;st_policy &amp; pm) &gt;&gt; POLICY_IPSEC_SHIFT]</span><br><span class="line">                , st, FALSE, FALSE, ISAKMP_NEXT_NONCE))</span><br><span class="line">        &#123;</span><br><span class="line">            reset_cur_state();</span><br><span class="line">            <span class="keyword">return</span> STF_INTERNAL_ERROR;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    &#123;</span><br><span class="line">        <span class="keyword">int</span> np;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span>(st-&gt;st_policy &amp; POLICY_PFS) &#123;<span class="comment">/*如果使用PFS,则需要再次DH协商*/</span></span><br><span class="line">            np = ISAKMP_NEXT_KE;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">if</span>(has_client) &#123;</span><br><span class="line">            np = ISAKMP_NEXT_ID;</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            np = ISAKMP_NEXT_NONE;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">/* Ni out */</span><span class="comment">/*填充Nonce载荷，并将其存储在st_ni中*/</span></span><br><span class="line">        <span class="keyword">if</span> (!ship_nonce(&amp;st-&gt;st_ni, r, &amp;rbody</span><br><span class="line">                , np</span><br><span class="line">                , <span class="string">&quot;Ni&quot;</span>))</span><br><span class="line">            &#123;</span><br><span class="line">            reset_cur_state();</span><br><span class="line">            <span class="keyword">return</span> STF_INTERNAL_ERROR;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">/* [ KE ] out (for PFS) */</span><span class="comment">/*填充KE载荷，并将其存储在st_gi*/</span></span><br><span class="line">        <span class="keyword">if</span> (st-&gt;st_pfs_group != <span class="literal">NULL</span>)</span><br><span class="line">        &#123;</span><br><span class="line">            <span class="keyword">if</span> (!ship_KE(st, r, &amp;st-&gt;st_gi</span><br><span class="line">                     , &amp;rbody</span><br><span class="line">                     , has_client? ISAKMP_NEXT_ID : ISAKMP_NEXT_NONE))</span><br><span class="line">            &#123;</span><br><span class="line">                reset_cur_state();</span><br><span class="line">                <span class="keyword">return</span> STF_INTERNAL_ERROR;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">/* [ IDci, IDcr ] out */</span></span><br><span class="line">        <span class="keyword">if</span> (has_client)<span class="comment">/*填充的子网ID*/</span></span><br><span class="line">        &#123;</span><br><span class="line">            <span class="comment">/* IDci (we are initiator), then IDcr (peer is responder) */</span></span><br><span class="line">            <span class="keyword">if</span> (!emit_subnet_id(&amp;c-&gt;spd.<span class="keyword">this</span><span class="comment">/*本端身份标识*/</span></span><br><span class="line">                        , ISAKMP_NEXT_ID</span><br><span class="line">                                    , st-&gt;st_localaddr</span><br><span class="line">                        , st-&gt;st_myuserprotoid</span><br><span class="line">                        , st-&gt;st_myuserport, &amp;rbody)</span><br><span class="line">                || !emit_subnet_id(&amp;c-&gt;spd.that<span class="comment">/*对端身份标识*/</span></span><br><span class="line">                           , ISAKMP_NEXT_NONE</span><br><span class="line">                                       , st-&gt;st_remoteaddr</span><br><span class="line">                           , st-&gt;st_peeruserprotoid</span><br><span class="line">                           , st-&gt;st_peeruserport, &amp;rbody))</span><br><span class="line">            &#123;</span><br><span class="line">                reset_cur_state();</span><br><span class="line">                <span class="keyword">return</span> STF_INTERNAL_ERROR;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">ifdef</span> NAT_TRAVERSAL</span></span><br><span class="line">    <span class="keyword">if</span> ((st-&gt;hidden_variables.st_nat_traversal &amp; NAT_T_WITH_NATOA)</span><br><span class="line">	&amp;&amp; (!(st-&gt;st_policy &amp; POLICY_TUNNEL))<span class="comment">/*只有传输模式才需要OA载荷????*/</span></span><br><span class="line">	&amp;&amp; (st-&gt;hidden_variables.st_nat_traversal &amp; LELEM(NAT_TRAVERSAL_NAT_BHND_ME))) &#123;</span><br><span class="line">    <span class="comment">/** Send NAT-OA if our address is NATed */</span><span class="comment">/*填充OA载荷，这里需要修改上一个载荷的NP*/</span></span><br><span class="line">        <span class="keyword">if</span> (!nat_traversal_add_natoa(ISAKMP_NEXT_NONE, &amp;rbody, st, TRUE <span class="comment">/* initiator */</span>)) &#123;</span><br><span class="line">            reset_cur_state();</span><br><span class="line">            <span class="keyword">return</span> STF_INTERNAL_ERROR;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">ifdef</span> TPM</span></span><br><span class="line">    &#123;</span><br><span class="line">	pb_stream *pbs = &amp;rbody;</span><br><span class="line">	<span class="keyword">size_t</span> enc_len = pbs_offset(pbs) - <span class="keyword">sizeof</span>(struct isakmp_hdr);</span><br><span class="line"></span><br><span class="line">	TCLCALLOUT_crypt(<span class="string">&quot;preHash&quot;</span>,st,pbs,<span class="keyword">sizeof</span>(struct isakmp_hdr),enc_len);</span><br><span class="line">	r_hashval = tpm_relocateHash(pbs);</span><br><span class="line">    &#125;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line"></span><br><span class="line">    <span class="comment">/* finish computing  HASH(1), inserting it in output */</span><span class="comment">/*计算整个载荷的哈希值*/</span></span><br><span class="line">    (<span class="keyword">void</span>) quick_mode_hash12(r_hashval, r_hash_start, rbody.cur</span><br><span class="line">	, st, &amp;st-&gt;st_msgid, FALSE);</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* encrypt message, except for fixed part of header */</span></span><br><span class="line"><span class="comment">/*设置第二阶段的IV值*/</span></span><br><span class="line">	</span><br><span class="line">    init_phase2_iv(isakmp_sa, &amp;st-&gt;st_msgid);</span><br><span class="line">    st-&gt;st_new_iv_len = isakmp_sa-&gt;st_new_iv_len;</span><br><span class="line">    set_new_iv(st, isakmp_sa-&gt;st_new_iv);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (!encrypt_message(&amp;rbody, st))<span class="comment">/*加密除报文头部以外的所有载荷*/</span></span><br><span class="line">    &#123;</span><br><span class="line">	reset_cur_state();</span><br><span class="line">	<span class="keyword">return</span> STF_INTERNAL_ERROR;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* save packet, now that we know its size 保留数据包，超时重传会使用到*/</span></span><br><span class="line">    clonetochunk(st-&gt;st_tpacket, reply_stream.start, pbs_offset(&amp;reply_stream)</span><br><span class="line">	, <span class="string">&quot;reply packet from quick_outI1&quot;</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* send the packet */</span></span><br><span class="line">    <span class="comment">/*发送报文，如果使用了NAT-T,则会添加Non-ESP的封装*/</span></span><br><span class="line">    send_packet(st, <span class="string">&quot;quick_outI1&quot;</span>, TRUE);</span><br><span class="line"></span><br><span class="line">    delete_event(st);<span class="comment">/*设置超时重传事件*/</span></span><br><span class="line">    event_schedule(EVENT_RETRANSMIT, EVENT_RETRANSMIT_DELAY_0, st);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (qke-&gt;replacing == SOS_NOBODY)</span><br><span class="line">	whack_log(RC_NEW_STATE + STATE_QUICK_I1</span><br><span class="line">	    , <span class="string">&quot;%s: initiate&quot;</span></span><br><span class="line">	    , enum_name(&amp;state_names, st-&gt;st_state));</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">	whack_log(RC_NEW_STATE + STATE_QUICK_I1</span><br><span class="line">	    , <span class="string">&quot;%s: initiate to replace #%lu&quot;</span></span><br><span class="line">	    , enum_name(&amp;state_names, st-&gt;st_state)</span><br><span class="line">	    , qke-&gt;replacing);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> STF_OK;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<hr>
+<p>下面对<code>quick_outI1_tail()</code>中的几个重要函数做个简单说明：</p>
+<h4 id="5-1-out-sa"><a href="#5-1-out-sa" class="headerlink" title="5.1 out_sa()"></a>5.1 out_sa()</h4><p>这个函数在第一阶段的前两个报文中使用过，当时使用的第一阶段的SA载荷，现在使用第二阶段的SA载荷；<code>out_sa</code>同时实现了第一阶段和第二阶段SA载荷封装的功能，它通过<code>bool oakley_mode</code>参数来确定使用第一阶段还是第二阶段的封装流程。如果说<code>out_struct</code>等封装接口已经比较熟的话，那么这个函数可能会比较容易，否则基本流程看起来还是有点吃力。这里只简单说明<code>out_struct</code>各个参数的作用：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/****************************************************************</span></span><br><span class="line"><span class="comment">将struct_ptr按照sd的描述方式拷贝到outs中。同时如果obj_pbs存在，</span></span><br><span class="line"><span class="comment">则使obj_pbs指向outs数据部分，并更新obj_pbs的cur指针到新填充的位置，</span></span><br><span class="line"><span class="comment">然后将outs的cur设置到最大，其他函数不得再操作outs,除非使用close_output_pbs更新才行</span></span><br><span class="line"><span class="comment">****************************************************************/</span></span><br><span class="line"><span class="function"><span class="keyword">bool</span></span></span><br><span class="line"><span class="function"><span class="title">out_struct</span><span class="params">(<span class="keyword">const</span> <span class="keyword">void</span> *struct_ptr, struct_desc *sd, pb_stream *outs, pb_stream *obj_pbs)</span></span></span><br></pre></td></tr></table></figure>
+
+<p>openswan源码在对齐上做的不敢恭维，而代码是不忍卒读(看不懂<img src="F:%5C%E9%9A%8F%E7%AC%94%5Copenswan%5C%E5%BF%AB%E9%80%9F%E6%A8%A1%E5%BC%8F%E7%AC%AC%E4%B8%80%E5%8C%85%EF%BC%9Aquick_outI1.assets%5C433F992D.gif" alt="img">)。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br><span class="line">198</span><br><span class="line">199</span><br><span class="line">200</span><br><span class="line">201</span><br><span class="line">202</span><br><span class="line">203</span><br><span class="line">204</span><br><span class="line">205</span><br><span class="line">206</span><br><span class="line">207</span><br><span class="line">208</span><br><span class="line">209</span><br><span class="line">210</span><br><span class="line">211</span><br><span class="line">212</span><br><span class="line">213</span><br><span class="line">214</span><br><span class="line">215</span><br><span class="line">216</span><br><span class="line">217</span><br><span class="line">218</span><br><span class="line">219</span><br><span class="line">220</span><br><span class="line">221</span><br><span class="line">222</span><br><span class="line">223</span><br><span class="line">224</span><br><span class="line">225</span><br><span class="line">226</span><br><span class="line">227</span><br><span class="line">228</span><br><span class="line">229</span><br><span class="line">230</span><br><span class="line">231</span><br><span class="line">232</span><br><span class="line">233</span><br><span class="line">234</span><br><span class="line">235</span><br><span class="line">236</span><br><span class="line">237</span><br><span class="line">238</span><br><span class="line">239</span><br><span class="line">240</span><br><span class="line">241</span><br><span class="line">242</span><br><span class="line">243</span><br><span class="line">244</span><br><span class="line">245</span><br><span class="line">246</span><br><span class="line">247</span><br><span class="line">248</span><br><span class="line">249</span><br><span class="line">250</span><br><span class="line">251</span><br><span class="line">252</span><br><span class="line">253</span><br><span class="line">254</span><br><span class="line">255</span><br><span class="line">256</span><br><span class="line">257</span><br><span class="line">258</span><br><span class="line">259</span><br><span class="line">260</span><br><span class="line">261</span><br><span class="line">262</span><br><span class="line">263</span><br><span class="line">264</span><br><span class="line">265</span><br><span class="line">266</span><br><span class="line">267</span><br><span class="line">268</span><br><span class="line">269</span><br><span class="line">270</span><br><span class="line">271</span><br><span class="line">272</span><br><span class="line">273</span><br><span class="line">274</span><br><span class="line">275</span><br><span class="line">276</span><br><span class="line">277</span><br><span class="line">278</span><br><span class="line">279</span><br><span class="line">280</span><br><span class="line">281</span><br><span class="line">282</span><br><span class="line">283</span><br><span class="line">284</span><br><span class="line">285</span><br><span class="line">286</span><br><span class="line">287</span><br><span class="line">288</span><br><span class="line">289</span><br><span class="line">290</span><br><span class="line">291</span><br><span class="line">292</span><br><span class="line">293</span><br><span class="line">294</span><br><span class="line">295</span><br><span class="line">296</span><br><span class="line">297</span><br><span class="line">298</span><br><span class="line">299</span><br><span class="line">300</span><br><span class="line">301</span><br><span class="line">302</span><br><span class="line">303</span><br><span class="line">304</span><br><span class="line">305</span><br><span class="line">306</span><br><span class="line">307</span><br><span class="line">308</span><br><span class="line">309</span><br><span class="line">310</span><br><span class="line">311</span><br><span class="line">312</span><br><span class="line">313</span><br><span class="line">314</span><br><span class="line">315</span><br><span class="line">316</span><br><span class="line">317</span><br><span class="line">318</span><br><span class="line">319</span><br><span class="line">320</span><br><span class="line">321</span><br><span class="line">322</span><br><span class="line">323</span><br><span class="line">324</span><br><span class="line">325</span><br><span class="line">326</span><br><span class="line">327</span><br><span class="line">328</span><br><span class="line">329</span><br><span class="line">330</span><br><span class="line">331</span><br><span class="line">332</span><br><span class="line">333</span><br><span class="line">334</span><br><span class="line">335</span><br><span class="line">336</span><br><span class="line">337</span><br><span class="line">338</span><br><span class="line">339</span><br><span class="line">340</span><br><span class="line">341</span><br><span class="line">342</span><br><span class="line">343</span><br><span class="line">344</span><br><span class="line">345</span><br><span class="line">346</span><br><span class="line">347</span><br><span class="line">348</span><br><span class="line">349</span><br><span class="line">350</span><br><span class="line">351</span><br><span class="line">352</span><br><span class="line">353</span><br><span class="line">354</span><br><span class="line">355</span><br><span class="line">356</span><br><span class="line">357</span><br><span class="line">358</span><br><span class="line">359</span><br><span class="line">360</span><br><span class="line">361</span><br><span class="line">362</span><br><span class="line">363</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">bool</span></span></span><br><span class="line"><span class="function"><span class="title">out_sa</span><span class="params">(pb_stream *outs</span></span></span><br><span class="line"><span class="params"><span class="function">       , struct db_sa *sadb</span></span></span><br><span class="line"><span class="params"><span class="function">       , struct state *st</span></span></span><br><span class="line"><span class="params"><span class="function">       , <span class="keyword">bool</span> oakley_mode</span></span></span><br><span class="line"><span class="params"><span class="function">       , <span class="keyword">bool</span> aggressive_mode UNUSED</span></span></span><br><span class="line"><span class="params"><span class="function">       , <span class="keyword">u_int8_t</span> np)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    pb_stream sa_pbs;</span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">int</span> pcn;</span><br><span class="line">    <span class="keyword">bool</span> ret = FALSE;</span><br><span class="line">    <span class="keyword">bool</span> ah_spi_generated = FALSE</span><br><span class="line">          , esp_spi_generated = FALSE</span><br><span class="line">          , ipcomp_cpi_generated = FALSE;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">db_sa</span> *<span class="title">revised_sadb</span>;</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span>(oakley_mode) &#123;</span><br><span class="line"><span class="comment">/* Aggr-Mode - Max transforms == 2 - Multiple transforms, 1 DH group */</span></span><br><span class="line"><span class="comment">/*根据配置的秘钥算法信息重新生成一个sadb信息*/</span></span><br><span class="line"><span class="comment">/*传入的sadb应该为固定的秘钥算法信息，因此需要根据策略来重新生成一个新的sadb*/</span></span><br><span class="line">      revised_sadb = oakley_alg_makedb(st-&gt;st_connection-&gt;alg_info_ike<span class="comment">/*第一阶段算法*/</span></span><br><span class="line">                                               , sadb</span><br><span class="line">                                               , aggressive_mode ? <span class="number">2</span> : <span class="number">-1</span>);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;<span class="comment">/*根据配置生成第二阶段的算法信息*/</span></span><br><span class="line">      revised_sad = kernel_alg_makedb(st-&gt;st_connection-&gt;policy</span><br><span class="line">                   , st-&gt;st_connection-&gt;alg_info_esp<span class="comment">/*第二阶段算法*/</span></span><br><span class="line">                   , TRUE);</span><br><span class="line">		<span class="comment">/*IPComp代码略*/</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* more sanity */</span></span><br><span class="line">    <span class="keyword">if</span>(revised_sadb != <span class="literal">NULL</span>) &#123;</span><br><span class="line">          sadb = revised_sadb;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* SA header out */</span></span><br><span class="line">    &#123;<span class="comment">/*添加SA头部*/</span></span><br><span class="line"><span class="comment">/*                      1                   2                   3</span></span><br><span class="line"><span class="comment"> *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1</span></span><br><span class="line"><span class="comment"> * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span></span><br><span class="line"><span class="comment"> * ! Next Payload  !   RESERVED    !         Payload Length        !</span></span><br><span class="line"><span class="comment"> * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span></span><br><span class="line"><span class="comment"> * !              Domain of Interpretation  (DOI)                  !</span></span><br><span class="line"><span class="comment"> * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span></span><br><span class="line"><span class="comment"> * !                                                               !</span></span><br><span class="line"><span class="comment"> * ~                           Situation                           ~</span></span><br><span class="line"><span class="comment"> * !                                                               !</span></span><br><span class="line"><span class="comment"> * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line">          <span class="class"><span class="keyword">struct</span> <span class="title">isakmp_sa</span> <span class="title">sa</span>;</span></span><br><span class="line"></span><br><span class="line">          sa.isasa_np = np;</span><br><span class="line">          st-&gt;st_doi = sa.isasa_doi = ISAKMP_DOI_IPSEC; <span class="comment">/* all we know */</span></span><br><span class="line">          <span class="keyword">if</span> (!out_struct(&amp;sa, &amp;isakmp_sa_desc, outs, &amp;sa_pbs))</span><br><span class="line">              return_on(ret, FALSE);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* within SA: situation out */</span><span class="comment">/*填充上图中的Situation字段*/</span></span><br><span class="line">    st-&gt;st_situation = SIT_IDENTITY_ONLY;</span><br><span class="line">    <span class="keyword">if</span> (!out_struct(&amp;st-&gt;st_situation, &amp;ipsec_sit_desc, &amp;sa_pbs, <span class="literal">NULL</span>))</span><br><span class="line">          return_on(ret, FALSE);</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* within SA: Proposal Payloads   建议载荷</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * Multiple Proposals with the same number are simultaneous</span></span><br><span class="line"><span class="comment">     * (conjuncts) and must deal with different protocols (AH or ESP).</span></span><br><span class="line"><span class="comment">     * Proposals with different numbers are alternatives (disjuncts),</span></span><br><span class="line"><span class="comment">     * in preference order.</span></span><br><span class="line"><span class="comment">     * Proposal numbers must be monotonic.</span></span><br><span class="line"><span class="comment">     * See RFC 2408 &quot;ISAKMP&quot; 4.2</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> (pcn = <span class="number">0</span>; pcn &lt; sadb-&gt;prop_conj_cnt; pcn++)</span><br><span class="line">    &#123;</span><br><span class="line">          <span class="class"><span class="keyword">struct</span> <span class="title">db_prop_conj</span> *<span class="title">pc</span>;</span></span><br><span class="line">          <span class="keyword">unsigned</span> <span class="keyword">int</span> pn;</span><br><span class="line">          <span class="keyword">int</span> valid_prop_cnt;</span><br><span class="line"></span><br><span class="line">          pc = &amp;sadb-&gt;prop_conjs[pcn];<span class="comment">/*遍历建议载荷*/</span></span><br><span class="line">          valid_prop_cnt = pc-&gt;prop_cnt;</span><br><span class="line">          DBG(DBG_EMITTING,</span><br><span class="line">              DBG_log(<span class="string">&quot;out_sa pcn: %d has %d valid proposals&quot;</span>,</span><br><span class="line">                        pcn, valid_prop_cnt));</span><br><span class="line"></span><br><span class="line">          <span class="keyword">for</span> (pn = <span class="number">0</span>; pn &lt; pc-&gt;prop_cnt; pn++)<span class="comment">/*遍历建议载荷*/</span></span><br><span class="line">          &#123;</span><br><span class="line">              <span class="class"><span class="keyword">struct</span> <span class="title">db_prop</span> *<span class="title">p</span>;</span></span><br><span class="line">              pb_stream proposal_pbs;</span><br><span class="line">              <span class="class"><span class="keyword">struct</span> <span class="title">isakmp_proposal</span> <span class="title">proposal</span>;</span></span><br><span class="line">              struct_desc *trans_desc;</span><br><span class="line">              struct_desc *attr_desc;</span><br><span class="line">              enum_names **attr_val_descs;</span><br><span class="line">              <span class="keyword">unsigned</span> <span class="keyword">int</span> tn;</span><br><span class="line">              <span class="keyword">bool</span> tunnel_mode;</span><br><span class="line"></span><br><span class="line">              <span class="comment">/*</span></span><br><span class="line"><span class="comment">               * set the tunnel_mode bit on the last proposal only, and</span></span><br><span class="line"><span class="comment">               * only if we are trying to negotiate tunnel mode in the first</span></span><br><span class="line"><span class="comment">               * place.</span></span><br><span class="line"><span class="comment">               */</span></span><br><span class="line">              tunnel_mode = (valid_prop_cnt == <span class="number">1</span>)</span><br><span class="line">                    &amp;&amp; (st-&gt;st_policy &amp; POLICY_TUNNEL);</span><br><span class="line"></span><br><span class="line">              <span class="comment">/*</span></span><br><span class="line"><span class="comment">        * pick the part of the proposal we are trying to work on</span></span><br><span class="line"><span class="comment">        */</span></span><br><span class="line">		 <span class="comment">/*                      1                   2                   3</span></span><br><span class="line"><span class="comment">		 *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1</span></span><br><span class="line"><span class="comment">		 * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span></span><br><span class="line"><span class="comment">		 * ! Next Payload  !   RESERVED    !         Payload Length        !</span></span><br><span class="line"><span class="comment">		 * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span></span><br><span class="line"><span class="comment">		 * !  Proposal #   !  Protocol-Id  !    SPI Size   !# of Transforms!</span></span><br><span class="line"><span class="comment">		 * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span></span><br><span class="line"><span class="comment">		 * !                        SPI (variable)                         !</span></span><br><span class="line"><span class="comment">		 * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+</span></span><br><span class="line"><span class="comment">		 */</span></span><br><span class="line">			  </span><br><span class="line">              p = &amp;pc-&gt;props[pn];</span><br><span class="line"></span><br><span class="line">              proposal.isap_proposal = pcn;</span><br><span class="line">              proposal.isap_protoid = p-&gt;protoid;</span><br><span class="line">              proposal.isap_spisize = oakley_mode ? <span class="number">0</span></span><br><span class="line">                    : p-&gt;protoid == PROTO_IPCOMP ? IPCOMP_CPI_SIZE</span><br><span class="line">                    : IPSEC_DOI_SPI_SIZE;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">              <span class="comment">/* but, skip things if the transform count is zero */</span></span><br><span class="line">              <span class="keyword">if</span>(p-&gt;trans_cnt == <span class="number">0</span>) <span class="keyword">continue</span>;</span><br><span class="line"></span><br><span class="line">              <span class="comment">/* Proposal header */</span></span><br><span class="line">              <span class="keyword">if</span>(--valid_prop_cnt &gt; <span class="number">0</span>) &#123;</span><br><span class="line">                    proposal.isap_np = ISAKMP_NEXT_P;</span><br><span class="line">              &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                    proposal.isap_np = ISAKMP_NEXT_NONE;</span><br><span class="line">              &#125;</span><br><span class="line"></span><br><span class="line">              proposal.isap_notrans = p-&gt;trans_cnt;<span class="comment">/*变换载荷的个数*/</span></span><br><span class="line">              <span class="keyword">if</span> (!out_struct(&amp;proposal, &amp;isakmp_proposal_desc</span><br><span class="line">                                  , &amp;sa_pbs, &amp;proposal_pbs))</span><br><span class="line">                    return_on(ret, FALSE);</span><br><span class="line"></span><br><span class="line">       <span class="comment">/* Per-protocols stuff:</span></span><br><span class="line"><span class="comment">       * Set trans_desc.</span></span><br><span class="line"><span class="comment">       * Set attr_desc.</span></span><br><span class="line"><span class="comment">       * Set attr_val_descs.</span></span><br><span class="line"><span class="comment">       * If not oakley_mode, emit SPI.</span></span><br><span class="line"><span class="comment">       * We allocate SPIs on demand.</span></span><br><span class="line"><span class="comment">       * All ESPs in an SA will share a single SPI.</span></span><br><span class="line"><span class="comment">       * All AHs in an SAwill share a single SPI.</span></span><br><span class="line"><span class="comment">       * AHs&#x27; SPI will be distinct from ESPs&#x27;.</span></span><br><span class="line"><span class="comment">       * This latter is needed because KLIPS doesn&#x27;t</span></span><br><span class="line"><span class="comment">       * use the protocol when looking up a (dest, protocol, spi).</span></span><br><span class="line"><span class="comment">       * ??? If multiple ESPs are composed, how should their SPIs</span></span><br><span class="line"><span class="comment">       * be allocated?</span></span><br><span class="line"><span class="comment">       */</span></span><br><span class="line">       &#123;</span><br><span class="line">		  <span class="class"><span class="keyword">struct</span> <span class="title">ipsec_proto_info</span> *<span class="title">pi</span> =</span> <span class="literal">NULL</span>;</span><br><span class="line">		  <span class="keyword">int</span> proto = <span class="number">0</span>;</span><br><span class="line">		  <span class="keyword">bool</span> *spi_generated;</span><br><span class="line"></span><br><span class="line">                    spi_generated = <span class="literal">NULL</span>;</span><br><span class="line"></span><br><span class="line">                    <span class="keyword">switch</span> (p-&gt;protoid)</span><br><span class="line">                    &#123;</span><br><span class="line">	                    <span class="keyword">case</span> PROTO_ISAKMP:</span><br><span class="line">	                        passert(oakley_mode);</span><br><span class="line">	                        trans_desc = &amp;isakmp_isakmp_transform_desc;</span><br><span class="line">	                        attr_desc = &amp;isakmp_oakley_attribute_desc;</span><br><span class="line">	                        attr_val_descs = oakley_attr_val_descs;</span><br><span class="line">	                        <span class="comment">/* no SPI needed */</span></span><br><span class="line">	                        <span class="keyword">break</span>;</span><br><span class="line">	<span class="comment">/*第二阶段时，在kernel_alg_db_new中根据策略配置选择采用的封装方式*/</span></span><br><span class="line">	                    <span class="keyword">case</span> PROTO_IPSEC_AH:</span><br><span class="line">	                        passert(!oakley_mode);</span><br><span class="line">	                        trans_desc = &amp;isakmp_ah_transform_desc;</span><br><span class="line">	                        attr_desc = &amp;isakmp_ipsec_attribute_desc;</span><br><span class="line">	                        attr_val_descs = ipsec_attr_val_descs;</span><br><span class="line">				pi = &amp;st-&gt;st_ah;</span><br><span class="line">	                        spi_generated = &amp;ah_spi_generated;</span><br><span class="line">	                        proto = IPPROTO_AH;</span><br><span class="line">	                        <span class="keyword">break</span>;</span><br><span class="line"></span><br><span class="line">	                    <span class="keyword">case</span> PROTO_IPSEC_ESP:</span><br><span class="line">	                        passert(!oakley_mode);</span><br><span class="line">	                        trans_desc = &amp;isakmp_esp_transform_desc;</span><br><span class="line">	                        attr_desc = &amp;isakmp_ipsec_attribute_desc;</span><br><span class="line">	                        attr_val_descs = ipsec_attr_val_descs;</span><br><span class="line">				pi = &amp;st-&gt;st_esp;</span><br><span class="line">	                        spi_generated = &amp;esp_spi_generated;</span><br><span class="line">	                        proto = IPPROTO_ESP;</span><br><span class="line">	                        <span class="keyword">break</span>;</span><br><span class="line"></span><br><span class="line">	                    <span class="keyword">case</span> PROTO_IPCOMP:</span><br><span class="line">	                        passert(!oakley_mode);</span><br><span class="line">	                        trans_desc = &amp;isakmp_ipcomp_transform_desc;</span><br><span class="line">	                        attr_desc = &amp;isakmp_ipsec_attribute_desc;</span><br><span class="line">	                        attr_val_descs = ipsec_attr_val_descs;</span><br><span class="line"></span><br><span class="line">	                        <span class="comment">/* a CPI isn&#x27;t quite the same as an SPI</span></span><br><span class="line"><span class="comment">	                         * so we use specialized code to emit it.</span></span><br><span class="line"><span class="comment">	                         */</span></span><br><span class="line">	                        <span class="keyword">if</span> (!ipcomp_cpi_generated)</span><br><span class="line">	                        &#123;</span><br><span class="line">	                              st-&gt;st_ipcomp.our_spi = get_my_cpi(st, tunnel_mode);</span><br><span class="line">	                              <span class="keyword">if</span> (st-&gt;st_ipcomp.our_spi == <span class="number">0</span>)</span><br><span class="line">	                                  return_on(ret, FALSE);          <span class="comment">/* problem generating CPI */</span></span><br><span class="line"></span><br><span class="line">	                              ipcomp_cpi_generated = TRUE;</span><br><span class="line">	                        &#125;</span><br><span class="line">	                        <span class="comment">/* CPI is stored in network low order end of an</span></span><br><span class="line"><span class="comment">	                         * ipsec_spi_t.  So we start a couple of bytes in.</span></span><br><span class="line"><span class="comment">	                         */</span></span><br><span class="line">	                        <span class="keyword">if</span> (!out_raw((u_char *)&amp;st-&gt;st_ipcomp.our_spi</span><br><span class="line">	                         + IPSEC_DOI_SPI_SIZE - IPCOMP_CPI_SIZE</span><br><span class="line">	                        , IPCOMP_CPI_SIZE</span><br><span class="line">	                        , &amp;proposal_pbs, <span class="string">&quot;CPI&quot;</span>))</span><br><span class="line">	                              return_on(ret, FALSE);</span><br><span class="line">	                        <span class="keyword">break</span>;</span><br><span class="line"></span><br><span class="line">	                    <span class="keyword">default</span>:</span><br><span class="line">	                        bad_case(p-&gt;protoid);</span><br><span class="line">                    &#125;</span><br><span class="line"></span><br><span class="line">                    <span class="keyword">if</span> (pi != <span class="literal">NULL</span>)</span><br><span class="line">                    &#123;</span><br><span class="line">	                        <span class="keyword">if</span> (spi_generated != <span class="literal">NULL</span> &amp;&amp; !*spi_generated)</span><br><span class="line">	                        &#123;</span><br><span class="line">					    <span class="keyword">if</span> (!get_ipsec_spi(pi</span><br><span class="line">							       , proto</span><br><span class="line">							       , st</span><br><span class="line">							       , tunnel_mode)) &#123;</span><br><span class="line">						<span class="keyword">return</span> FALSE;</span><br><span class="line">					    &#125;</span><br><span class="line">					    *spi_generated = TRUE;</span><br><span class="line">	                        &#125;</span><br><span class="line">	                        <span class="keyword">if</span> (!out_raw((u_char *)&amp;pi-&gt;our_spi, IPSEC_DOI_SPI_SIZE</span><br><span class="line">					     , &amp;proposal_pbs, <span class="string">&quot;SPI&quot;</span>))</span><br><span class="line">				    	return_on(ret, FALSE);</span><br><span class="line">                    &#125;</span><br><span class="line">              &#125;</span><br><span class="line"></span><br><span class="line">              <span class="comment">/* 填充变换载荷 within proposal: Transform Payloads */</span></span><br><span class="line">              <span class="keyword">for</span> (tn = <span class="number">0</span>; tn != p-&gt;trans_cnt; tn++)</span><br><span class="line">              &#123;</span><br><span class="line">                    <span class="class"><span class="keyword">struct</span> <span class="title">db_trans</span> *<span class="title">t</span> =</span> &amp;p-&gt;trans[tn];</span><br><span class="line">                    pb_stream trans_pbs;</span><br><span class="line">                    <span class="class"><span class="keyword">struct</span> <span class="title">isakmp_transform</span> <span class="title">trans</span>;</span></span><br><span class="line">                    <span class="keyword">unsigned</span> <span class="keyword">int</span> an;</span><br><span class="line"></span><br><span class="line">                    trans.isat_np = (tn == p-&gt;trans_cnt - <span class="number">1</span>)</span><br><span class="line">                        ? ISAKMP_NEXT_NONE : ISAKMP_NEXT_T;</span><br><span class="line">                    trans.isat_transnum = tn;</span><br><span class="line">                    trans.isat_transid = t-&gt;transid;</span><br><span class="line">                    <span class="keyword">if</span> (!out_struct(&amp;trans, trans_desc, &amp;proposal_pbs, &amp;trans_pbs))</span><br><span class="line">                        return_on(ret, FALSE);</span><br><span class="line"></span><br><span class="line">                    <span class="comment">/* Within tranform: Attributes. */</span></span><br><span class="line"></span><br><span class="line">                    <span class="comment">/* For Phase 2 / Quick Mode, GROUP_DESCRIPTION is</span></span><br><span class="line"><span class="comment">                     * automatically generated because it must be the same</span></span><br><span class="line"><span class="comment">                     * in every transform.  Except IPCOMP.</span></span><br><span class="line"><span class="comment">                     */</span></span><br><span class="line">                    <span class="keyword">if</span> (p-&gt;protoid != PROTO_IPCOMP</span><br><span class="line">                    &amp;&amp; st-&gt;st_pfs_group != <span class="literal">NULL</span>)<span class="comment">/*添加PFS组属性信息*/</span></span><br><span class="line">                    &#123;</span><br><span class="line">                        passert(!oakley_mode);</span><br><span class="line">                        passert(st-&gt;st_pfs_group != &amp;unset_group);</span><br><span class="line">                        out_attr(GROUP_DESCRIPTION, st-&gt;st_pfs_group-&gt;group</span><br><span class="line">                              , attr_desc, attr_val_descs</span><br><span class="line">                              , &amp;trans_pbs);</span><br><span class="line">                    &#125;</span><br><span class="line"></span><br><span class="line">                    <span class="comment">/* automatically generate duration</span></span><br><span class="line"><span class="comment">                     * and, for Phase 2 / Quick Mode, encapsulation.</span></span><br><span class="line"><span class="comment">                     */</span></span><br><span class="line">                    <span class="keyword">if</span> (oakley_mode)<span class="comment">/*第一阶段*/</span></span><br><span class="line">                    &#123;</span><br><span class="line">                        out_attr(OAKLEY_LIFE_TYPE, OAKLEY_LIFE_SECONDS</span><br><span class="line">                              , attr_desc, attr_val_descs</span><br><span class="line">                              , &amp;trans_pbs);</span><br><span class="line">                        out_attr(OAKLEY_LIFE_DURATION</span><br><span class="line">                              , st-&gt;st_connection-&gt;sa_ike_life_seconds</span><br><span class="line">                              , attr_desc, attr_val_descs</span><br><span class="line">                              , &amp;trans_pbs);</span><br><span class="line">                    &#125;</span><br><span class="line">                    <span class="keyword">else</span><span class="comment">/*第二阶段*/</span></span><br><span class="line">                    &#123;</span><br><span class="line">                        <span class="comment">/* RFC 2407 (IPSEC DOI) 4.5 specifies that</span></span><br><span class="line"><span class="comment">                         * the default is &quot;unspecified (host-dependent)&quot;.</span></span><br><span class="line"><span class="comment">                         * This makes little sense, so we always specify it.</span></span><br><span class="line"><span class="comment">                         *</span></span><br><span class="line"><span class="comment">                         * Unlike other IPSEC transforms, IPCOMP defaults</span></span><br><span class="line"><span class="comment">                         * to Transport Mode, so we can exploit the default</span></span><br><span class="line"><span class="comment">                         * (draft-shacham-ippcp-rfc2393bis-05.txt 4.1).</span></span><br><span class="line"><span class="comment">                         */</span></span><br><span class="line">                        <span class="keyword">if</span> (p-&gt;protoid != PROTO_IPCOMP</span><br><span class="line">                        || st-&gt;st_policy &amp; POLICY_TUNNEL)</span><br><span class="line">                        &#123;</span><br><span class="line">							<span class="comment">/*隧道模式? 传输模式*/</span></span><br><span class="line">                            out_attr(ENCAPSULATION_MODE</span><br><span class="line"><span class="meta">#<span class="meta-keyword">ifdef</span> NAT_TRAVERSAL</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">ifdef</span> I_KNOW_TRANSPORT_MODE_HAS_SECURITY_CONCERN_BUT_I_WANT_IT</span></span><br><span class="line">                                  , NAT_T_ENCAPSULATION_MODE(st,st-&gt;st_policy)</span><br><span class="line"><span class="meta">#<span class="meta-keyword">else</span></span></span><br><span class="line">                          <span class="comment">/* If NAT-T is detected, use UDP_TUNNEL as long as Transport</span></span><br><span class="line"><span class="comment">                           * Mode has security concerns.</span></span><br><span class="line"><span class="comment">                           *</span></span><br><span class="line"><span class="comment">                           * User has been informed of that</span></span><br><span class="line"><span class="comment">                           */</span></span><br><span class="line">                                  , NAT_T_ENCAPSULATION_MODE(st,POLICY_TUNNEL)</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">else</span> <span class="comment">/* ! NAT_TRAVERSAL */</span></span></span><br><span class="line">                                  , st-&gt;st_policy &amp; POLICY_TUNNEL</span><br><span class="line">                                    ? ENCAPSULATION_MODE_TUNNEL : 			ENCAPSULATION_MODE_TRANSPORT</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line">                                  , attr_desc, attr_val_descs</span><br><span class="line">                                  , &amp;trans_pbs);</span><br><span class="line">                        &#125;</span><br><span class="line">                        out_attr(SA_LIFE_TYPE, SA_LIFE_TYPE_SECONDS <span class="comment">/*单位:秒*/</span> </span><br><span class="line">                              , attr_desc, attr_val_descs</span><br><span class="line">                              , &amp;trans_pbs);</span><br><span class="line">                        out_attr(SA_LIFE_DURATION</span><br><span class="line">                              , st-&gt;st_connection-&gt;sa_ipsec_life_seconds <span class="comment">/*生存时间从连接上获取*/</span></span><br><span class="line">                              , attr_desc, attr_val_descs</span><br><span class="line">                              , &amp;trans_pbs);</span><br><span class="line"></span><br><span class="line">                    &#125;</span><br><span class="line"></span><br><span class="line">                    <span class="comment">/* spit out attributes from table */</span></span><br><span class="line">                    <span class="keyword">for</span> (an = <span class="number">0</span>; an != t-&gt;attr_cnt; an++)</span><br><span class="line">                    &#123;</span><br><span class="line">                        <span class="class"><span class="keyword">struct</span> <span class="title">db_attr</span> *<span class="title">a</span> =</span> &amp;t-&gt;attrs[an];</span><br><span class="line"></span><br><span class="line">                        <span class="keyword">if</span>(oakley_mode) &#123;</span><br><span class="line">                              out_attr(a-&gt;type.oakley, a-&gt;val</span><br><span class="line">                                         , attr_desc, attr_val_descs</span><br><span class="line">                                         , &amp;trans_pbs);</span><br><span class="line">                        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                           out_attr(a-&gt;type.ipsec,  a-&gt;val , attr_desc, attr_val_descs , &amp;trans_pbs);</span><br><span class="line"></span><br><span class="line">                        &#125;</span><br><span class="line"></span><br><span class="line">                    &#125;</span><br><span class="line"></span><br><span class="line">                    close_output_pbs(&amp;trans_pbs);</span><br><span class="line">              &#125;</span><br><span class="line">              close_output_pbs(&amp;proposal_pbs);</span><br><span class="line">          &#125;</span><br><span class="line">          <span class="comment">/* end of a conjunction of proposals */</span></span><br><span class="line">    &#125;</span><br><span class="line">    close_output_pbs(&amp;sa_pbs);</span><br><span class="line">    ret = TRUE;</span><br><span class="line"></span><br><span class="line">return_out:</span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">if</span> defined(KERNEL_ALG) || defined(IKE_ALG)</span></span><br><span class="line">    <span class="keyword">if</span> (revised_sadb)</span><br><span class="line">          free_sa(revised_sadb);</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line">    <span class="keyword">return</span> ret;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>一般而言，比较关心我们配置的参数在哪里生效？ 例如加密算法、认证算法、隧道模式or传输模式都是在<code>out_sa()</code>中通过属性载荷封装在报文中的。下图为属性载荷结构：</p>
+<p><img src="F:%5C%E9%9A%8F%E7%AC%94%5Copenswan%5C%E5%BF%AB%E9%80%9F%E6%A8%A1%E5%BC%8F%E7%AC%AC%E4%B8%80%E5%8C%85%EF%BC%9Aquick_outI1.assets%5Cimage-20200827002952001.png" alt="image-20200827002952001"></p>
+<p>属性类型的最高比特位AF指定数据为定长还是变长，如果为0表示定长；如果为1表示变长。</p>
+<p>具体属性类型有以下几种（全是定长类型）：</p>
+<table>
+<thead>
+<tr>
+<th>属性类型</th>
+<th>属性类型取值</th>
+<th>属性值说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>SA生存周期</td>
+<td>1</td>
+<td>0: 保留    1:秒    2:千字节</td>
+</tr>
+<tr>
+<td>SA生存期</td>
+<td>2</td>
+<td>0: 保留    1:秒    2:千字节</td>
+</tr>
+<tr>
+<td>组描述</td>
+<td>3</td>
+<td>略</td>
+</tr>
+<tr>
+<td><strong>封装模式</strong></td>
+<td>4</td>
+<td>0：保留     1：隧道模式      2：传输模式</td>
+</tr>
+<tr>
+<td><strong>认证算法</strong></td>
+<td>5</td>
+<td>0：RESERVED    1：HMAC-MD5      2:HMAC-SHA   ….</td>
+</tr>
+<tr>
+<td>密钥长度</td>
+<td>6</td>
+<td>略</td>
+</tr>
+<tr>
+<td>密钥轮数</td>
+<td>7</td>
+<td>略</td>
+</tr>
+<tr>
+<td>压缩字典长度</td>
+<td>8</td>
+<td>略</td>
+</tr>
+<tr>
+<td>私有压缩算法</td>
+<td>9</td>
+<td>略</td>
+</tr>
+</tbody></table>
+<p>注：加密算法不适用属性载荷进行封装。</p>
+<h4 id="5-2-emit-subnet-id"><a href="#5-2-emit-subnet-id" class="headerlink" title="5.2 emit_subnet_id()"></a>5.2 emit_subnet_id()</h4><p>第二阶段除了协商加解密算法信息，还会对双方的保护子网进行匹配。而保护子网是通过ID载荷来传输的。在第一阶段中使用<code>build_id_payload()</code>接口将我们在配置隧道的“<strong>身份标识</strong>”发送对方以供双方认证，第二阶段使用<code>emit_subnet_id()</code>来协商两端的保护子网信息。</p>
+<p>每一条隧道有本端和对端两个节点，这两个节点都是用<code>struct end</code>结构描述，而两端的保护子网使用<code>struct end</code>中的<code>ip_subnet client;</code>描述，<code>ip_subnet</code>结构如下：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> &#123;</span></span><br><span class="line">	ip_address addr;</span><br><span class="line">	<span class="keyword">int</span> maskbits;</span><br><span class="line">&#125; ip_subnet;</span><br></pre></td></tr></table></figure>
+
+
+
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* Initiate quick mode.</span></span><br><span class="line"><span class="comment"> * --&gt; HDR*, HASH(1), SA, Nr [, KE ] [, IDci, IDcr ]</span></span><br><span class="line"><span class="comment"> * (see RFC 2409 &quot;IKE&quot; 5.5)</span></span><br><span class="line"><span class="comment"> * Note: this is not called from demux.c</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="comment">/*填充的是隧道端口IP还是子网的信息? </span></span><br><span class="line"><span class="comment">*保护子网是如何协商的???</span></span><br><span class="line"><span class="comment">*/</span></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">bool</span></span></span><br><span class="line"><span class="function"><span class="title">emit_subnet_id</span><span class="params">(struct end *e</span></span></span><br><span class="line"><span class="params"><span class="function">	       , <span class="keyword">u_int8_t</span> np</span></span></span><br><span class="line"><span class="params"><span class="function">               , ip_address endpoint</span></span></span><br><span class="line"><span class="params"><span class="function">	       , <span class="keyword">u_int8_t</span> protoid</span></span></span><br><span class="line"><span class="params"><span class="function">	       , <span class="keyword">u_int16_t</span> port</span></span></span><br><span class="line"><span class="params"><span class="function">	       , pb_stream *outs)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">isakmp_ipsec_id</span> <span class="title">id</span>;</span></span><br><span class="line">    pb_stream id_pbs;</span><br><span class="line">    ip_address ta;</span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">char</span> *tbp;</span><br><span class="line">    <span class="keyword">size_t</span> tal;</span><br><span class="line">    <span class="keyword">const</span> <span class="class"><span class="keyword">struct</span> <span class="title">af_info</span> *<span class="title">ai</span>;</span></span><br><span class="line">    <span class="keyword">bool</span> usehost = FALSE;</span><br><span class="line">    ip_subnet clientnet;</span><br><span class="line"></span><br><span class="line">    clientnet = e-&gt;client;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span>(!e-&gt;has_client) &#123;</span><br><span class="line">        <span class="comment">/* we propose the IP address of the interface that we are using. */</span></span><br><span class="line">        <span class="comment">/*</span></span><br><span class="line"><span class="comment">     * we could instead propose 0.0.0.0-&gt;255.255.255.255 and let the other</span></span><br><span class="line"><span class="comment">     * end narrow the TS, but if one wants that, it is easy to just specify</span></span><br><span class="line"><span class="comment">     * in the configuration file: rightsubnet=0.0.0.0/0.</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * When there is NAT involved, we may really want a tunnel to the</span></span><br><span class="line"><span class="comment">     * address that this end point thinks it is.  That works only when</span></span><br><span class="line"><span class="comment">     * virtual_ip includes the IP involved.</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">        addrtosubnet(&amp;endpoint, &amp;clientnet);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    ai = aftoinfo(subnettypeof(&amp;clientnet));</span><br><span class="line">    passert(ai != <span class="literal">NULL</span>);</span><br><span class="line"></span><br><span class="line">    id.isaiid_np = np;</span><br><span class="line">    id.isaiid_idtype = (usehost ? ai-&gt;id_addr : ai-&gt;id_subnet);<span class="comment">/*确定使用主机ID还是子网ID；由于usehost===FALSE,因此这里使用子网ID*/</span></span><br><span class="line">    id.isaiid_protoid = protoid;</span><br><span class="line">    id.isaiid_port = port;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (!out_struct(&amp;id, &amp;isakmp_ipsec_identification_desc, outs, &amp;id_pbs))</span><br><span class="line">	<span class="keyword">return</span> FALSE;</span><br><span class="line"></span><br><span class="line">    networkof(&amp;clientnet, &amp;ta);<span class="comment">/*获取保护子网*/</span></span><br><span class="line">    tal = addrbytesptr(&amp;ta, &amp;tbp);</span><br><span class="line">    <span class="keyword">if</span> (!out_raw(tbp, tal, &amp;id_pbs, <span class="string">&quot;client network&quot;</span>))<span class="comment">/*填充保护子网信息*/</span></span><br><span class="line">	<span class="keyword">return</span> FALSE;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span>(!usehost)</span><br><span class="line">    &#123;</span><br><span class="line">	maskof(&amp;clientnet, &amp;ta);<span class="comment">/*获取保护子网掩码*/</span></span><br><span class="line">	tal = addrbytesptr(&amp;ta, &amp;tbp);</span><br><span class="line">	<span class="keyword">if</span> (!out_raw(tbp, tal, &amp;id_pbs, <span class="string">&quot;client mask&quot;</span>))<span class="comment">/*填充保护子网掩码信息*/</span></span><br><span class="line">	    <span class="keyword">return</span> FALSE;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    close_output_pbs(&amp;id_pbs);</span><br><span class="line">    <span class="keyword">return</span> TRUE;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>ID载荷(标识载荷)包含以下几种类型：</p>
+<table>
+<thead>
+<tr>
+<th>ID类型</th>
+<th>描述</th>
+<th>取值</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>ID_NONE</td>
+<td>未使用</td>
+<td>0</td>
+</tr>
+<tr>
+<td><strong>ID_IPV4_ADDR</strong></td>
+<td>单独的一个IPv4地址</td>
+<td>1</td>
+</tr>
+<tr>
+<td><strong>ID_FQDN</strong></td>
+<td>全域名字符串，如topsec.com.cn</td>
+<td>2</td>
+</tr>
+<tr>
+<td><strong>ID_USER_FQDN</strong></td>
+<td>用户名字符串，如<a href="mailto:&#108;&#105;&#x5f;&#x73;&#x69;&#64;&#116;&#111;&#112;&#115;&#101;&#x63;&#46;&#x63;&#111;&#x6d;&#x2e;&#99;&#110;">&#108;&#105;&#x5f;&#x73;&#x69;&#64;&#116;&#111;&#112;&#115;&#101;&#x63;&#46;&#x63;&#111;&#x6d;&#x2e;&#99;&#110;</a></td>
+<td>3</td>
+</tr>
+<tr>
+<td>ID_RFC822_ADDR</td>
+<td>同ID_USER_FQDN</td>
+<td>ID_USER_FQDN</td>
+</tr>
+<tr>
+<td><strong>ID_IPV4_ADDR_SUBNET</strong></td>
+<td>IPv4类子网地址，如192.168.1.1 255.255.255.0</td>
+<td>4</td>
+</tr>
+<tr>
+<td>ID_IPV6_ADDR</td>
+<td>单独IPv6地址</td>
+<td>5</td>
+</tr>
+<tr>
+<td>ID_IPV6_ADDR_SUBNET</td>
+<td>IPv6子网地址</td>
+<td>6</td>
+</tr>
+<tr>
+<td>ID_IPV4_ADDR_RANGE</td>
+<td>IPv4地址范围区间, 如192.168.2.3 192.168.2.200</td>
+<td>7</td>
+</tr>
+<tr>
+<td>ID_IPV6_ADDR_RANGE</td>
+<td>IPv6地址范围区间</td>
+<td>8</td>
+</tr>
+<tr>
+<td>ID_DER_ASN1_DN</td>
+<td>x.500编码格式</td>
+<td>9</td>
+</tr>
+<tr>
+<td>ID_DER_ASN1_GN</td>
+<td>x.500编码格式</td>
+<td>10</td>
+</tr>
+<tr>
+<td>ID_KEY_ID</td>
+<td>传递特定厂商信息的字节流</td>
+<td>11</td>
+</tr>
+</tbody></table>
+<h4 id="5-3-encrypt-message"><a href="#5-3-encrypt-message" class="headerlink" title="5.3 encrypt_message()"></a>5.3 encrypt_message()</h4><p>报文的加密范围：除了ISAKMP头部之外都需要进行加密。加密使用第一阶段协商的加密秘钥（报文认证时同时也会用到认证密钥）。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* encrypt message, sans fixed part of header</span></span><br><span class="line"><span class="comment"> * IV is fetched from st-&gt;st_new_iv and stored into st-&gt;st_iv.</span></span><br><span class="line"><span class="comment"> * The theory is that there will be no &quot;backing out&quot;, so we commit to IV.</span></span><br><span class="line"><span class="comment"> * We also close the pbs.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">bool</span></span></span><br><span class="line"><span class="function"><span class="title">encrypt_message</span><span class="params">(pb_stream *pbs, struct state *st)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">const</span> <span class="class"><span class="keyword">struct</span> <span class="title">encrypt_desc</span> *<span class="title">e</span> =</span> st-&gt;st_oakley.encrypter;</span><br><span class="line">    <span class="keyword">u_int8_t</span> *enc_start = pbs-&gt;start + <span class="keyword">sizeof</span>(struct isakmp_hdr);<span class="comment">/*加密的内容为ISAKMP头部之后*/</span></span><br><span class="line">    <span class="keyword">size_t</span> enc_len = pbs_offset(pbs) - <span class="keyword">sizeof</span>(struct isakmp_hdr);<span class="comment">/*加密内容的长度*/</span></span><br><span class="line"></span><br><span class="line">    DBG_cond_dump(DBG_CRYPT | DBG_RAW, <span class="string">&quot;encrypting:\n&quot;</span>, enc_start, enc_len);</span><br><span class="line">    DBG_cond_dump(DBG_CRYPT | DBG_RAW, <span class="string">&quot;IV:\n&quot;</span></span><br><span class="line">		  , st-&gt;st_new_iv</span><br><span class="line">		  , st-&gt;st_new_iv_len);</span><br><span class="line">    DBG(DBG_CRYPT, DBG_log(<span class="string">&quot;unpadded size is: %u&quot;</span>, (<span class="keyword">unsigned</span> <span class="keyword">int</span>)enc_len));</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* Pad up to multiple of encryption blocksize.</span></span><br><span class="line"><span class="comment">     * See the description associated with the definition of</span></span><br><span class="line"><span class="comment">     * struct isakmp_hdr in packet.h.</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    &#123;</span><br><span class="line">    <span class="comment">/*确定需要填充的长度*/</span></span><br><span class="line">	<span class="keyword">size_t</span> padding = pad_up(enc_len, e-&gt;enc_blocksize);</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> (padding != <span class="number">0</span>)<span class="comment">/*如果填充的长度不为0,则需要进行填充数据*/</span></span><br><span class="line">	&#123;</span><br><span class="line">	    <span class="keyword">if</span> (!out_zero(padding, pbs, <span class="string">&quot;encryption padding&quot;</span>))<span class="comment">/*在输出流上进行报文填充*/</span></span><br><span class="line">		<span class="keyword">return</span> FALSE;</span><br><span class="line">	    enc_len += padding;</span><br><span class="line">	&#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    DBG(DBG_CRYPT</span><br><span class="line">	, DBG_log(<span class="string">&quot;encrypting %d using %s&quot;</span></span><br><span class="line">		  , (<span class="keyword">unsigned</span> <span class="keyword">int</span>)enc_len</span><br><span class="line">		  , enum_show(&amp;oakley_enc_names, st-&gt;st_oakley.encrypt)));</span><br><span class="line"></span><br><span class="line">    TCLCALLOUT_crypt(<span class="string">&quot;preEncrypt&quot;</span>, st, pbs,<span class="keyword">sizeof</span>(struct isakmp_hdr),enc_len);<span class="comment">/*非TPM未做任何处理*/</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">/* e-&gt;crypt(TRUE, enc_start, enc_len, st); */</span></span><br><span class="line">    crypto_cbc_encrypt(e, TRUE, enc_start, enc_len, st);<span class="comment">/*使用CBC算法进行加密:使用连接上第一阶段协商的加密算法和加密密钥信息*/</span></span><br><span class="line"></span><br><span class="line">    TCLCALLOUT_crypt(<span class="string">&quot;postEncrypt&quot;</span>, st,pbs,<span class="keyword">sizeof</span>(struct isakmp_hdr),enc_len);</span><br><span class="line"></span><br><span class="line">    update_iv(st);</span><br><span class="line">    DBG_cond_dump(DBG_CRYPT, <span class="string">&quot;next IV:&quot;</span>, st-&gt;st_iv, st-&gt;st_iv_len);</span><br><span class="line">    close_message(pbs);</span><br><span class="line">    <span class="keyword">return</span> TRUE;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="5-4-out-modify-previous-np"><a href="#5-4-out-modify-previous-np" class="headerlink" title="5.4 out_modify_previous_np()"></a>5.4 out_modify_previous_np()</h4><p>此函数的作用在于修改前一个载荷头部中的下一个载荷字段。它在填充NAT-T相关的OA载荷时用到。基本原理是从头部开始向后遍历每一个载荷，直到找到最后一个载荷的头部(尚未填充新的载荷，因此它还是最后一个载荷)。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">bool</span></span></span><br><span class="line"><span class="function"><span class="title">out_modify_previous_np</span><span class="params">(<span class="keyword">u_int8_t</span> np, pb_stream *outs)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">u_int8_t</span> *pl = outs-&gt;start;</span><br><span class="line">    <span class="keyword">size_t</span> left = outs-&gt;cur - outs-&gt;start;</span><br><span class="line"></span><br><span class="line">    passert(left &gt;= NSIZEOF_isakmp_hdr);    <span class="comment">/* not even room for isakmp_hdr! */</span></span><br><span class="line">    <span class="keyword">if</span> (left == NSIZEOF_isakmp_hdr) &#123;</span><br><span class="line">	<span class="comment">/* no payloads, just the isakmp_hdr: insert np here */</span></span><br><span class="line">	passert(pl[NOFFSETOF_isa_np] == ISAKMP_NEXT_NONE ||</span><br><span class="line">		pl[NOFFSETOF_isa_np] == ISAKMP_NEXT_HASH);</span><br><span class="line">	pl[NOFFSETOF_isa_np] = np;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">	pl += NSIZEOF_isakmp_hdr;       <span class="comment">/* skip over isakmp_hdr */</span></span><br><span class="line">	left -= NSIZEOF_isakmp_hdr;</span><br><span class="line">	<span class="keyword">for</span> (;;) &#123;</span><br><span class="line">		<span class="keyword">size_t</span> pllen;</span><br><span class="line"></span><br><span class="line">		passert(left &gt;= NSIZEOF_isakmp_generic);</span><br><span class="line">		pllen = (pl[NOFFSETOF_isag_length] &lt;&lt; <span class="number">8</span>)<span class="comment">/*payload 一般为两个字节*/</span></span><br><span class="line">			| pl[NOFFSETOF_isag_length + <span class="number">1</span>];</span><br><span class="line">		passert(left &gt;= pllen);</span><br><span class="line">		<span class="keyword">if</span> (left == pllen) &#123;<span class="comment">/*当前载荷长度和剩余长度相同时，说明已经找到上一个载荷*/</span></span><br><span class="line">			<span class="comment">/* found last top-level payload */</span></span><br><span class="line">			pl[NOFFSETOF_isag_np] = np;</span><br><span class="line">			<span class="keyword">break</span>;  <span class="comment">/* done */</span></span><br><span class="line">		&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">			<span class="comment">/* this payload is not the last: scan forward */</span></span><br><span class="line">			pl += pllen;</span><br><span class="line">			left -= pllen;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> TRUE;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="6-小结"><a href="#6-小结" class="headerlink" title="6. 小结"></a>6. 小结</h3><p>略</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/blogs/tags/ipsec/" rel="tag"># IPSec</a>
+              <a href="/blogs/tags/openswan/" rel="tag"># openswan</a>
+              <a href="/blogs/tags/VPN/" rel="tag"># VPN</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/blogs/2021/11/20/RCU%E9%94%81%E6%95%B4%E7%90%86/" rel="prev" title="👉👉RCU锁原理深度思考">
+      <i class="fa fa-chevron-left"></i> 👉👉RCU锁原理深度思考
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/blogs/2021/11/20/%E5%BF%AB%E9%80%9F%E6%A8%A1%E5%BC%8F%E7%AC%AC%E4%B8%89%E5%8C%85%20quick_inR1_outI2()/" rel="next" title="快速模式第三包之quick_inR1_outI2()">
+      快速模式第三包之quick_inR1_outI2() <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E5%BA%8F%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">1. 序言</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-quick-outI1-%E6%B5%81%E7%A8%8B%E5%9B%BE"><span class="nav-number">2.</span> <span class="nav-text">2. quick_outI1()流程图</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-quick-outI1-%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90"><span class="nav-number">3.</span> <span class="nav-text">3. quick_outI1()源码分析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-quick-outI1-continue-%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90"><span class="nav-number">4.</span> <span class="nav-text">4. quick_outI1_continue()源码分析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-quick-outI1-tail-%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90"><span class="nav-number">5.</span> <span class="nav-text">5. quick_outI1_tail()源码分析</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#5-1-out-sa"><span class="nav-number">5.1.</span> <span class="nav-text">5.1 out_sa()</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#5-2-emit-subnet-id"><span class="nav-number">5.2.</span> <span class="nav-text">5.2 emit_subnet_id()</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#5-3-encrypt-message"><span class="nav-number">5.3.</span> <span class="nav-text">5.3 encrypt_message()</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#5-4-out-modify-previous-np"><span class="nav-number">5.4.</span> <span class="nav-text">5.4 out_modify_previous_np()</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-%E5%B0%8F%E7%BB%93"><span class="nav-number">6.</span> <span class="nav-text">6. 小结</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="叨陪鲤"
+      src="/blogs/images/me.jpg">
+  <p class="site-author-name" itemprop="name">叨陪鲤</p>
+  <div class="site-description" itemprop="description">他日趋庭，叨陪鲤对</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/blogs/archives/">
+        
+          <span class="site-state-item-count">14</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/blogs/categories/">
+        <span class="site-state-item-count">3</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/blogs/tags/">
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div>
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<span id="busuanzi_container_site_pv" style='display:none'>
+    本站总访问量 <span id="busuanzi_value_site_pv"></span> 次
+    <span class="post-meta-divider">|</span>
+</span>
+<span id="busuanzi_container_site_uv" style='display:none'>
+    有<span id="busuanzi_value_site_uv"></span>人看过我的博客啦
+</span>
+</div>
+
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">叨陪鲤</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> 强力驱动
+  </div>
+
+
+    <script async src="//dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+        
+<div class="busuanzi-count">
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/blogs/lib/anime.min.js"></script>
+  <script src="/blogs/lib/pjax/pjax.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="/blogs/lib/velocity/velocity.min.js"></script>
+  <script src="/blogs/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/blogs/js/utils.js"></script>
+
+<script src="/blogs/js/motion.js"></script>
+
+
+<script src="/blogs/js/schemes/muse.js"></script>
+
+
+<script src="/blogs/js/next-boot.js"></script>
+
+  <script>
+var pjax = new Pjax({
+  selectors: [
+    'head title',
+    '#page-configurations',
+    '.content-wrap',
+    '.post-toc-wrap',
+    '.languages',
+    '#pjax'
+  ],
+  switches: {
+    '.post-toc-wrap': Pjax.switches.innerHTML
+  },
+  analytics: false,
+  cacheBust: false,
+  scrollTo : !CONFIG.bookmark.enable
+});
+
+window.addEventListener('pjax:success', () => {
+  document.querySelectorAll('script[data-pjax], script#page-configurations, #pjax script').forEach(element => {
+    var code = element.text || element.textContent || element.innerHTML || '';
+    var parent = element.parentNode;
+    parent.removeChild(element);
+    var script = document.createElement('script');
+    if (element.id) {
+      script.id = element.id;
+    }
+    if (element.className) {
+      script.className = element.className;
+    }
+    if (element.type) {
+      script.type = element.type;
+    }
+    if (element.src) {
+      script.src = element.src;
+      // Force synchronous loading of peripheral JS.
+      script.async = false;
+    }
+    if (element.dataset.pjax !== undefined) {
+      script.dataset.pjax = '';
+    }
+    if (code !== '') {
+      script.appendChild(document.createTextNode(code));
+    }
+    parent.appendChild(script);
+  });
+  NexT.boot.refresh();
+  // Define Motion Sequence & Bootstrap Motion.
+  if (CONFIG.motion.enable) {
+    NexT.motion.integrator
+      .init()
+      .add(NexT.motion.middleWares.subMenu)
+      .add(NexT.motion.middleWares.postList)
+      .bootstrap();
+  }
+  NexT.utils.updateSidebarPosition();
+});
+</script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/blogs/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <div id="pjax">
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('[object Object]', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'MQdIgAGKML1LrVfkG1rbQUgO-gzGzoHsz',
+      appKey     : '3ECTEO4bp11EiKGpp4bTd07P',
+      placeholder: "欢迎留言交流学习！",
+      avatar     : 'robohash',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : 'en, zh-cn' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+    </div>
+</body>
+</html>

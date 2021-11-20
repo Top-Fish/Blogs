@@ -21,24 +21,26 @@
     var CONFIG = {"hostname":".github.io","root":"/blogs/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"always","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"buttons","active":"valine","storage":true,"lazyload":false,"nav":null,"activeClass":"valine"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="为了方便查阅现有的文章，特准备一个目录页供后续查询使用">
+  <meta name="description" content="1. 序言main_inR3()函数是ISAKMP协商过程中&#x3D;&#x3D;第一阶段的最后一个报文的接收处理函数&#x3D;&#x3D;，它的作用同main_inI3_outR3()部分功能相同：完成对对端身份的认证。他们的不同之处在于不在需要响应报文（如果不考虑第二阶段的话）。此包处理完毕后，发起端便成功建立了ISAKMP SA, 完成了第一阶段主模式的协商。后续便是第二阶段的协商。这里我们主要说明main_inR3的函数调用">
 <meta property="og:type" content="article">
-<meta property="og:title" content="💝openswan专栏目录💝">
-<meta property="og:url" content="https://.github.io/blogs/2021/11/20/openswan%E4%B8%93%E6%A0%8F%E7%9B%AE%E5%BD%95/index.html">
+<meta property="og:title" content="主模式第六包(收包)：main_inR3">
+<meta property="og:url" content="https://.github.io/blogs/2021/11/20/%E4%B8%BB%E6%A8%A1%E5%BC%8F%E7%AC%AC%E5%85%AD%E5%8C%85(%E6%94%B6%E5%8C%85)%EF%BC%9Amain_inR3/index.html">
 <meta property="og:site_name" content="遇见你是我最美丽的意外">
-<meta property="og:description" content="为了方便查阅现有的文章，特准备一个目录页供后续查询使用">
+<meta property="og:description" content="1. 序言main_inR3()函数是ISAKMP协商过程中&#x3D;&#x3D;第一阶段的最后一个报文的接收处理函数&#x3D;&#x3D;，它的作用同main_inI3_outR3()部分功能相同：完成对对端身份的认证。他们的不同之处在于不在需要响应报文（如果不考虑第二阶段的话）。此包处理完毕后，发起端便成功建立了ISAKMP SA, 完成了第一阶段主模式的协商。后续便是第二阶段的协商。这里我们主要说明main_inR3的函数调用">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://img-blog.csdnimg.cn/20201122205357123.jpg?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3MyNjAzODk4MjYw,size_16,color_FFFFFF,t_70#pic_center">
-<meta property="article:published_time" content="2021-11-20T03:28:38.000Z">
-<meta property="article:modified_time" content="2021-11-20T11:54:35.292Z">
+<meta property="og:image" content="https://raw.githubusercontent.com/Top-Fish/PhotoRepository/main/img/SSL-TLS/20211120204950.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/Top-Fish/PhotoRepository/main/img/SSL-TLS/20211120204953.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/Top-Fish/PhotoRepository/main/img/SSL-TLS/20211120204955.png">
+<meta property="article:published_time" content="2021-11-20T13:28:38.000Z">
+<meta property="article:modified_time" content="2021-11-20T14:48:52.091Z">
 <meta property="article:author" content="叨陪鲤">
 <meta property="article:tag" content="IPSec">
 <meta property="article:tag" content="openswan">
 <meta property="article:tag" content="VPN">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://img-blog.csdnimg.cn/20201122205357123.jpg?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3MyNjAzODk4MjYw,size_16,color_FFFFFF,t_70#pic_center">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/Top-Fish/PhotoRepository/main/img/SSL-TLS/20211120204950.png">
 
-<link rel="canonical" href="https://.github.io/blogs/2021/11/20/openswan%E4%B8%93%E6%A0%8F%E7%9B%AE%E5%BD%95/">
+<link rel="canonical" href="https://.github.io/blogs/2021/11/20/%E4%B8%BB%E6%A8%A1%E5%BC%8F%E7%AC%AC%E5%85%AD%E5%8C%85(%E6%94%B6%E5%8C%85)%EF%BC%9Amain_inR3/">
 
 
 <script id="page-configurations">
@@ -51,7 +53,7 @@
   };
 </script>
 
-  <title>💝openswan专栏目录💝 | 遇见你是我最美丽的意外</title>
+  <title>主模式第六包(收包)：main_inR3 | 遇见你是我最美丽的意外</title>
   
 
 
@@ -195,7 +197,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://.github.io/blogs/2021/11/20/openswan%E4%B8%93%E6%A0%8F%E7%9B%AE%E5%BD%95/">
+    <link itemprop="mainEntityOfPage" href="https://.github.io/blogs/2021/11/20/%E4%B8%BB%E6%A8%A1%E5%BC%8F%E7%AC%AC%E5%85%AD%E5%8C%85(%E6%94%B6%E5%8C%85)%EF%BC%9Amain_inR3/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/blogs/images/me.jpg">
@@ -208,14 +210,10 @@
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          💝openswan专栏目录💝
+          主模式第六包(收包)：main_inR3
         </h1>
 
         <div class="post-meta">
-          
-            <i class="fa fa-thumb-tack"></i>
-            <font color=7D26CD>🔥<b>置顶好文</b>🔥</font>
-            <span class="post-meta-divider">|</span>
           
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -224,7 +222,7 @@
               <span class="post-meta-item-text">发表于</span>
               
 
-              <time title="创建时间：2021-11-20 11:28:38 / 修改时间：19:54:35" itemprop="dateCreated datePublished" datetime="2021-11-20T11:28:38+08:00">2021-11-20</time>
+              <time title="创建时间：2021-11-20 21:28:38 / 修改时间：22:48:52" itemprop="dateCreated datePublished" datetime="2021-11-20T21:28:38+08:00">2021-11-20</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -256,8 +254,8 @@
       </span>
       <span class="post-meta-item-text">Valine：</span>
     
-    <a title="valine" href="/blogs/2021/11/20/openswan%E4%B8%93%E6%A0%8F%E7%9B%AE%E5%BD%95/#valine-comments" itemprop="discussionUrl">
-      <span class="post-comments-count valine-comment-count" data-xid="/blogs/2021/11/20/openswan%E4%B8%93%E6%A0%8F%E7%9B%AE%E5%BD%95/" itemprop="commentCount"></span>
+    <a title="valine" href="/blogs/2021/11/20/%E4%B8%BB%E6%A8%A1%E5%BC%8F%E7%AC%AC%E5%85%AD%E5%8C%85(%E6%94%B6%E5%8C%85)%EF%BC%9Amain_inR3/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/blogs/2021/11/20/%E4%B8%BB%E6%A8%A1%E5%BC%8F%E7%AC%AC%E5%85%AD%E5%8C%85(%E6%94%B6%E5%8C%85)%EF%BC%9Amain_inR3/" itemprop="commentCount"></span>
     </a>
   </span>
   
@@ -272,65 +270,44 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <p><font color="#0000bb">为了方便查阅现有的文章，特准备一个目录页供后续查询使用</font></p>
+        <h3 id="1-序言"><a href="#1-序言" class="headerlink" title="1. 序言"></a>1. 序言</h3><p><code>main_inR3()</code>函数是ISAKMP协商过程中==第一阶段的最后一个报文的接收处理函数==，它的作用同<code>main_inI3_outR3()</code>部分功能相同：完成对对端身份的认证。他们的不同之处在于不在需要响应报文（如果不考虑第二阶段的话）。此包处理完毕后，发起端便成功建立了ISAKMP SA, 完成了第一阶段主模式的协商。后续便是第二阶段的协商。这里我们主要说明<code>main_inR3</code>的函数调用关系、处理流程以及对源码的注释分析，关于<code>main_inR3</code>的上下文环境暂不叙述，留给后面的文章进行更新。</p>
 <span id="more"></span>
-
-<img src="https://img-blog.csdnimg.cn/20201122205357123.jpg?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3MyNjAzODk4MjYw,size_16,color_FFFFFF,t_70#pic_center"  />
-
-
-<ul>
-<li><input checked="" disabled="" type="checkbox"> <a target="_blank" rel="noopener" href="https://blog.csdn.net/s2603898260/article/details/105780700">专栏序言</a></li>
-</ul>
-<h3 id="1-基础知识"><a href="#1-基础知识" class="headerlink" title="1. 基础知识"></a>1. 基础知识</h3><ul>
-<li><input checked="" disabled="" type="checkbox"> <a target="_blank" rel="noopener" href="https://blog.csdn.net/s2603898260/article/details/105810406">openswan任务调度基础知识之信号</a><h3 id="2-openswan环境搭建"><a href="#2-openswan环境搭建" class="headerlink" title="2. openswan环境搭建"></a>2. openswan环境搭建</h3></li>
-<li><input checked="" disabled="" type="checkbox"> <a target="_blank" rel="noopener" href="https://blog.csdn.net/s2603898260/article/details/112975141">openswan框架和编译时说明</a></li>
-<li><input checked="" disabled="" type="checkbox"> <a target="_blank" rel="noopener" href="https://blog.csdn.net/s2603898260/article/details/105855454">openswan编译安装</a><h3 id="3-NAT穿越"><a href="#3-NAT穿越" class="headerlink" title="3. NAT穿越"></a>3. NAT穿越</h3></li>
-<li><input checked="" disabled="" type="checkbox"> <a target="_blank" rel="noopener" href="https://blog.csdn.net/s2603898260/article/details/105214411">NAT-T下的端口浮动</a></li>
-<li><input checked="" disabled="" type="checkbox"> <a target="_blank" rel="noopener" href="https://blog.csdn.net/s2603898260/article/details/105212626">NAT-T原理和环境搭建</a><h3 id="4-openswan函数笔记"><a href="#4-openswan函数笔记" class="headerlink" title="4. openswan函数笔记"></a>4. openswan函数笔记</h3></li>
-<li><input checked="" disabled="" type="checkbox"> <a target="_blank" rel="noopener" href="https://blog.csdn.net/s2603898260/article/details/106172947">in_struct和out_struct讲解</a></li>
-<li><input checked="" disabled="" type="checkbox"> <a target="_blank" rel="noopener" href="https://blog.csdn.net/s2603898260/article/details/106131750">openswan发送状态分析</a></li>
-<li><input checked="" disabled="" type="checkbox"> <a target="_blank" rel="noopener" href="https://blog.csdn.net/s2603898260/article/details/107913541">pluto中监听各个网口的500端口处理逻辑</a></li>
-<li><input checked="" disabled="" type="checkbox"> <a href="">pluto中CPU占有率高的接口与优化方案</a></li>
-<li><input checked="" disabled="" type="checkbox"> <a target="_blank" rel="noopener" href="https://blog.csdn.net/s2603898260/article/details/106578067">Openswan支持的算法及参数信息</a></li>
-<li><input checked="" disabled="" type="checkbox"> <a target="_blank" rel="noopener" href="https://blog.csdn.net/s2603898260/article/details/113447879">命令行解析函数：getopt_long、getopt</a></li>
-<li><input checked="" disabled="" type="checkbox"> <a target="_blank" rel="noopener" href="https://blog.csdn.net/s2603898260/article/details/113445039">ipsec.conf配置文件多个保护子网解析流程</a> </li>
-</ul>
-<h3 id="5-IKEv1协商流程"><a href="#5-IKEv1协商流程" class="headerlink" title="5. IKEv1协商流程"></a>5. IKEv1协商流程</h3><ul>
-<li><input checked="" disabled="" type="checkbox"> <a target="_blank" rel="noopener" href="https://blog.csdn.net/s2603898260/article/details/106226299">openswan协商流程之（一）：main_outI1()</a></li>
-<li><input checked="" disabled="" type="checkbox"> <a target="_blank" rel="noopener" href="https://blog.csdn.net/s2603898260/article/details/106226416">openswan协商流程之（二）：main_inI1_outR1()</a></li>
-<li><input checked="" disabled="" type="checkbox"> <a target="_blank" rel="noopener" href="https://blog.csdn.net/s2603898260/article/details/106247599">openswan协商流程之（三）：main_inR1_outI2()</a> </li>
-<li><input checked="" disabled="" type="checkbox"> <a target="_blank" rel="noopener" href="https://blog.csdn.net/s2603898260/article/details/106271199">openswan协商流程之（四）：main_inI2_outR2()</a></li>
-<li><input checked="" disabled="" type="checkbox"> <a target="_blank" rel="noopener" href="https://blog.csdn.net/s2603898260/article/details/106310714">openswan协商流程之（五）：main_inR2_outI3()</a> </li>
-<li><input checked="" disabled="" type="checkbox"> <a target="_blank" rel="noopener" href="https://blog.csdn.net/s2603898260/article/details/106580396">openswan协商流程之（六）：main_inI3_outR3()</a></li>
-<li><input checked="" disabled="" type="checkbox"> <a target="_blank" rel="noopener" href="https://blog.csdn.net/s2603898260/article/details/106592883">openswan协商流程之（七）：main_inR3()</a></li>
-<li><input checked="" disabled="" type="checkbox"> <a target="_blank" rel="noopener" href="https://blog.csdn.net/s2603898260/article/details/108252077">openswan快速模式协商流程之（一）：quick_outI1()</a></li>
-<li><input checked="" disabled="" type="checkbox"> <a target="_blank" rel="noopener" href="https://blog.csdn.net/s2603898260/article/details/108459144">openswan快速模式协商流程之（二）：quick_inI1_outR1()</a></li>
-<li><input checked="" disabled="" type="checkbox"> <a target="_blank" rel="noopener" href="https://blog.csdn.net/s2603898260/article/details/108560293">openswan快速模式协商流程之（三）：quick_inR1_outI2()</a></li>
-</ul>
+<p>ISAKMP协商报文的处理流程都比较复杂，此函数在协商的报文处理函数中比较复杂的，因此个人学习期间难免有遗漏和理解错误的地方，请大家多多批评指正。</p>
 <hr>
-<h3 id="6-IKEv2协议相关"><a href="#6-IKEv2协议相关" class="headerlink" title="6. IKEv2协议相关"></a>6. IKEv2协议相关</h3><ul>
-<li><input checked="" disabled="" type="checkbox"> <a target="_blank" rel="noopener" href="https://blog.csdn.net/s2603898260/article/details/106915035">IKEv2协议简介</a></li>
-<li><input checked="" disabled="" type="checkbox"> <a target="_blank" rel="noopener" href="https://blog.csdn.net/s2603898260/article/details/107117675">IKEv2协议关键知识点总结整理</a></li>
-<li><input checked="" disabled="" type="checkbox"> <a target="_blank" rel="noopener" href="https://blog.csdn.net/s2603898260/article/details/109019539">IKEv2协议协商流程: （IKE-SA-INIT 交换）第一包</a></li>
-<li><input checked="" disabled="" type="checkbox"> <a target="_blank" rel="noopener" href="https://blog.csdn.net/s2603898260/article/details/109062848">IKEv2协议协商流程: （IKE-SA-INIT 交换）第二包</a></li>
+<p>目前主要是整理源码中的处理里流程和实现逻辑，尚未深入比较细节的处理；后续在我整理完毕使用主模式协商的9个报文后，我再次结合代码整理每一个报文的详细流程，到时把每一个报文的注意事项、作用，处理方式做一个整体上的把握。同时结合书本上的描述来解释代码层的实现。</p>
+<hr>
+<p>ISAKMP主模式协商流程如下：</p>
+<p><img src="https://raw.githubusercontent.com/Top-Fish/PhotoRepository/main/img/SSL-TLS/20211120204950.png" alt="image-20200606195135324"></p>
+<p>本文要说明的便是第⑥包的接收函数：<code>main_inR3()</code>;</p>
+<h3 id="2-函数调用关系"><a href="#2-函数调用关系" class="headerlink" title="2. 函数调用关系"></a>2. 函数调用关系</h3><p><code>main_inR3()</code>函数的调用层次少了很多（如果不考虑加解密、证书认证的话），它的调用关系图如下所示</p>
+<p><img src="https://raw.githubusercontent.com/Top-Fish/PhotoRepository/main/img/SSL-TLS/20211120204953.png" alt="image-20200606195717889"></p>
+<h3 id="3-第⑥个报文接收流程图"><a href="#3-第⑥个报文接收流程图" class="headerlink" title="3. 第⑥个报文接收流程图"></a>3. 第⑥个报文接收流程图</h3><p><strong>第⑥个报文的接收流程<code>main_inR3</code>的功能可以分为三类</strong>(如果把建立ISAKMP SA也看作一类的话)：</p>
+<ul>
+<li><input checked="" disabled="" type="checkbox"> <strong>解析对方的身份标识(ID)和证书载荷，匹配对方的身份标识</strong></li>
+<li><input checked="" disabled="" type="checkbox"> <strong>身份验证</strong><ul>
+<li><input checked="" disabled="" type="checkbox"> 预共享秘钥</li>
+<li><input checked="" disabled="" type="checkbox"> 数字证书</li>
 </ul>
-<h3 id="7-加密流程"><a href="#7-加密流程" class="headerlink" title="7. 加密流程"></a>7. 加密流程</h3><ul>
-<li><input checked="" disabled="" type="checkbox"> <a target="_blank" rel="noopener" href="https://blog.csdn.net/s2603898260/article/details/109929113">ipsec 加密流程（一）：ipsec策略匹配</a></li>
-<li><input checked="" disabled="" type="checkbox"> <a target="_blank" rel="noopener" href="https://blog.csdn.net/s2603898260/article/details/109943878">ipsec 加密流程（二）：ipsec初始化操作</a></li>
-<li><input checked="" disabled="" type="checkbox"> <a target="_blank" rel="noopener" href="https://blog.csdn.net/s2603898260/article/details/110018251">ipsec 加密流程（三）：ESP加密、AH认证处理流程</a></li>
-<li><input checked="" disabled="" type="checkbox"> <a target="_blank" rel="noopener" href="https://blog.csdn.net/s2603898260/article/details/110410067">ipsec 加密流程（四）：封装状态机和发送流程</a></li>
+</li>
+<li><input checked="" disabled="" type="checkbox"> <strong>建立ISAKMP SA</strong></li>
 </ul>
-<h3 id="8-💖openswan进阶💖"><a href="#8-💖openswan进阶💖" class="headerlink" title="8. 💖openswan进阶💖"></a>8. 💖openswan进阶💖</h3><ul>
-<li><input checked="" disabled="" type="checkbox"> <a target="_blank" rel="noopener" href="https://blog.csdn.net/s2603898260/article/details/113043610">ubantu与CentOS虚拟机之间搭建GRE隧道</a></li>
-<li><input checked="" disabled="" type="checkbox"> <a target="_blank" rel="noopener" href="https://blog.csdn.net/s2603898260/article/details/113008094">🔥openswan一条隧道多保护子网配置</a></li>
-<li><input checked="" disabled="" type="checkbox"> <a target="_blank" rel="noopener" href="https://mp.csdn.net/mp_blog/creation/editor/113075156">🔥为何GRE可以封装组播报文而IPSEC却不行？</a></li>
-<li><input checked="" disabled="" type="checkbox"> <a target="_blank" rel="noopener" href="https://blog.csdn.net/s2603898260/article/details/120593578">🔥SSL/TLS 与 IPSec 对比</a></li>
-<li><input checked="" disabled="" type="checkbox"> <a target="_blank" rel="noopener" href="https://blog.csdn.net/s2603898260/article/details/113575857">🔥IKE 多预共享密钥问题 解决方案</a><h3 id="9-图解密码学技术"><a href="#9-图解密码学技术" class="headerlink" title="9. 图解密码学技术"></a>9. 图解密码学技术</h3></li>
-<li><input checked="" disabled="" type="checkbox"> <a target="_blank" rel="noopener" href="https://blog.csdn.net/s2603898260/article/details/112341844">DH算法图解+数学证明</a></li>
-<li><input checked="" disabled="" type="checkbox"> <a target="_blank" rel="noopener" href="https://blog.csdn.net/s2603898260/article/details/112503905">openswan中DH算法说明</a></li>
-<li><input checked="" disabled="" type="checkbox"> <a target="_blank" rel="noopener" href="https://blog.csdn.net/s2603898260/article/details/112744384">图解密码学(一)</a></li>
+<p>流程图下图：</p>
+<p><img src="https://raw.githubusercontent.com/Top-Fish/PhotoRepository/main/img/SSL-TLS/20211120204955.png" alt="image-20200606185131522"></p>
+<h3 id="4-源码分析"><a href="#4-源码分析" class="headerlink" title="4. 源码分析"></a>4. 源码分析</h3><p>由于<code>main_R3()</code>的处理流程和<code>main_inI3_outR3()</code>中的部分处理流程调用了相同的函数接口，因此无需再进行说明，如果有疑问可以查看<code>main_inI3_outR3()</code>的中的源码部分。</p>
+<h3 id="5-总结"><a href="#5-总结" class="headerlink" title="5. 总结"></a>5. 总结</h3><p>openswan的源码确实难度很高，虽然用了很长的时间来看主模式的6个报文7个主要的函数接口，前后花费了一个月时间吧（之前陆陆续续看过部分接口），但是学习的时候比较浅，没有深层次的理解。最主要包括以下几个方面：</p>
+<ul>
+<li><p><input checked="" disabled="" type="checkbox">  报文的加解密</p>
+<p>报文加密、解密是在第⑤⑥个报文中才有的，关于这部分的功能（加密、哈希、数字证书签名验签、预共享密钥等），只知道它是在做这种处理，基本没有深入去分析代码。这个主要是由于看不懂，内心里有种抵触心理；其次是不想直接深入学习这部分，先学习整体处理框架，然后再慢慢深入学习这部分功能。即“<strong>先广度优先搜索，再深度优先搜索</strong>”</p>
+</li>
+<li><p><input checked="" disabled="" type="checkbox">  算法相关的操作</p>
+<p>这里的算法相关，我是想表达对于策略的配置解析存储算法、如何与报文中的载荷相对应、支持的算法类型、协商时处理对方建议载荷的原则等等问题。这部分有的可能已经在协商流程中有所涉及，但是关于算法的存储等是在这部分之前的流程中处理的(<code>whack_handle()</code>)，因此没有过多学习。后面再补充whack命令相关的知识。</p>
+</li>
+<li><p><input checked="" disabled="" type="checkbox">  连接和状态之间的联系</p>
+<p>主要的疑惑是不清楚他们成员之间的关系，可能是特别大，同时关系有比较复杂的缘故。状态是一个动态的概念，即协商过程中的参数；连接是我们的隧道配置信息，基本是个固定的结构。他们是如何维护、以及协商过程中如何联系起来，这部分没有系统整理和分析过。举个简单的例子：<strong>NAT-T在ISAKMP中是如何完成协商的？</strong> 这个我之前处理过一个bug,因此可能分析过协商过程中的联系，但是其他的我就不得而知了。</p>
+</li>
 </ul>
-<h3 id="10-Linux内核IPSEC实现"><a href="#10-Linux内核IPSEC实现" class="headerlink" title="10. Linux内核IPSEC实现"></a>10. Linux内核IPSEC实现</h3>
+<p><strong>任重而道远，继续努力吧。</strong></p>
+
     </div>
 
     
@@ -349,10 +326,13 @@
 
         
     <div class="post-nav">
-      <div class="post-nav-item"></div>
       <div class="post-nav-item">
-    <a href="/blogs/2021/11/20/RCU%E9%94%81%E6%95%B4%E7%90%86/" rel="next" title="👉👉RCU锁原理深度思考">
-      👉👉RCU锁原理深度思考 <i class="fa fa-chevron-right"></i>
+    <a href="/blogs/2021/11/20/%E4%B8%BB%E6%A8%A1%E5%BC%8F%E7%AC%AC%E4%BA%94%E5%8C%85%EF%BC%9Amain_inR2_outI3/" rel="prev" title="主模式第五包：main_inR2_outI3">
+      <i class="fa fa-chevron-left"></i> 主模式第五包：main_inR2_outI3
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/blogs/2021/11/20/%E4%B8%BB%E6%A8%A1%E5%BC%8F%E7%AC%AC%E4%BA%8C%E5%8C%85%EF%BC%9Amain_inI1_outR1()/" rel="next" title="主模式第二包：main_inI1_outR1()">
+      主模式第二包：main_inI1_outR1() <i class="fa fa-chevron-right"></i>
     </a></div>
     </div>
       </footer>
@@ -413,7 +393,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86"><span class="nav-number">1.</span> <span class="nav-text">1. 基础知识</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-openswan%E7%8E%AF%E5%A2%83%E6%90%AD%E5%BB%BA"><span class="nav-number">2.</span> <span class="nav-text">2. openswan环境搭建</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-NAT%E7%A9%BF%E8%B6%8A"><span class="nav-number">3.</span> <span class="nav-text">3. NAT穿越</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-openswan%E5%87%BD%E6%95%B0%E7%AC%94%E8%AE%B0"><span class="nav-number">4.</span> <span class="nav-text">4. openswan函数笔记</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-IKEv1%E5%8D%8F%E5%95%86%E6%B5%81%E7%A8%8B"><span class="nav-number">5.</span> <span class="nav-text">5. IKEv1协商流程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-IKEv2%E5%8D%8F%E8%AE%AE%E7%9B%B8%E5%85%B3"><span class="nav-number">6.</span> <span class="nav-text">6. IKEv2协议相关</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#7-%E5%8A%A0%E5%AF%86%E6%B5%81%E7%A8%8B"><span class="nav-number">7.</span> <span class="nav-text">7. 加密流程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#8-%F0%9F%92%96openswan%E8%BF%9B%E9%98%B6%F0%9F%92%96"><span class="nav-number">8.</span> <span class="nav-text">8. 💖openswan进阶💖</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#9-%E5%9B%BE%E8%A7%A3%E5%AF%86%E7%A0%81%E5%AD%A6%E6%8A%80%E6%9C%AF"><span class="nav-number">9.</span> <span class="nav-text">9. 图解密码学技术</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#10-Linux%E5%86%85%E6%A0%B8IPSEC%E5%AE%9E%E7%8E%B0"><span class="nav-number">10.</span> <span class="nav-text">10. Linux内核IPSEC实现</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E5%BA%8F%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">1. 序言</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E5%87%BD%E6%95%B0%E8%B0%83%E7%94%A8%E5%85%B3%E7%B3%BB"><span class="nav-number">2.</span> <span class="nav-text">2. 函数调用关系</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E7%AC%AC%E2%91%A5%E4%B8%AA%E6%8A%A5%E6%96%87%E6%8E%A5%E6%94%B6%E6%B5%81%E7%A8%8B%E5%9B%BE"><span class="nav-number">3.</span> <span class="nav-text">3. 第⑥个报文接收流程图</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90"><span class="nav-number">4.</span> <span class="nav-text">4. 源码分析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5-%E6%80%BB%E7%BB%93"><span class="nav-number">5.</span> <span class="nav-text">5. 总结</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 

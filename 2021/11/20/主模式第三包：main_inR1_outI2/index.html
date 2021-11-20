@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/blogs/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/blogs/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/blogs/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/blogs/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/blogs/css/main.css">
+
+
+<link rel="stylesheet" href="/blogs/lib/font-awesome/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":".github.io","root":"/blogs/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"always","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"buttons","active":"valine","storage":true,"lazyload":false,"nav":null,"activeClass":"valine"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="1. 序言main_inR1_outI2()函数是ISAKMP协商过程中&#x3D;&#x3D;第三包的核心处理函数的入口&#x3D;&#x3D;。这里我们主要说明main_inR1_outI2的函数调用关系、处理流程以及对源码的注释分析，关于main_inR1_outI2的上下文环境暂不叙述，留给后面的文章进行更新。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="主模式第三包：main_inR1_outI2">
+<meta property="og:url" content="https://.github.io/blogs/2021/11/20/%E4%B8%BB%E6%A8%A1%E5%BC%8F%E7%AC%AC%E4%B8%89%E5%8C%85%EF%BC%9Amain_inR1_outI2/index.html">
+<meta property="og:site_name" content="遇见你是我最美丽的意外">
+<meta property="og:description" content="1. 序言main_inR1_outI2()函数是ISAKMP协商过程中&#x3D;&#x3D;第三包的核心处理函数的入口&#x3D;&#x3D;。这里我们主要说明main_inR1_outI2的函数调用关系、处理流程以及对源码的注释分析，关于main_inR1_outI2的上下文环境暂不叙述，留给后面的文章进行更新。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://raw.githubusercontent.com/Top-Fish/PhotoRepository/main/img/SSL-TLS/20211120204847.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/Top-Fish/PhotoRepository/main/img/SSL-TLS/20211120204851.png">
+<meta property="article:published_time" content="2021-11-20T13:28:38.000Z">
+<meta property="article:modified_time" content="2021-11-20T14:48:20.404Z">
+<meta property="article:author" content="叨陪鲤">
+<meta property="article:tag" content="IPSec">
+<meta property="article:tag" content="openswan">
+<meta property="article:tag" content="VPN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/Top-Fish/PhotoRepository/main/img/SSL-TLS/20211120204847.png">
+
+<link rel="canonical" href="https://.github.io/blogs/2021/11/20/%E4%B8%BB%E6%A8%A1%E5%BC%8F%E7%AC%AC%E4%B8%89%E5%8C%85%EF%BC%9Amain_inR1_outI2/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>主模式第三包：main_inR1_outI2 | 遇见你是我最美丽的意外</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/blogs/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">遇见你是我最美丽的意外</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">红红火火恍恍惚惚或</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-主页">
+
+    <a href="/blogs/" rel="section"><i class="fa fa-home fa-fw"></i>主页</a>
+
+  </li>
+        <li class="menu-item menu-item-标签">
+
+    <a href="/blogs/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-分类">
+
+    <a href="/blogs/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/blogs/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://.github.io/blogs/2021/11/20/%E4%B8%BB%E6%A8%A1%E5%BC%8F%E7%AC%AC%E4%B8%89%E5%8C%85%EF%BC%9Amain_inR1_outI2/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/blogs/images/me.jpg">
+      <meta itemprop="name" content="叨陪鲤">
+      <meta itemprop="description" content="他日趋庭，叨陪鲤对">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="遇见你是我最美丽的意外">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          主模式第三包：main_inR1_outI2
+        </h1>
+
+        <div class="post-meta">
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2021-11-20 21:28:38 / 修改时间：22:48:20" itemprop="dateCreated datePublished" datetime="2021-11-20T21:28:38+08:00">2021-11-20</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/blogs/categories/ipsec/" itemprop="url" rel="index"><span itemprop="name">IPSecVPN</span></a>
+                </span>
+                  ，
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/blogs/categories/ipsec/openswan/" itemprop="url" rel="index"><span itemprop="name">openswan</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/blogs/2021/11/20/%E4%B8%BB%E6%A8%A1%E5%BC%8F%E7%AC%AC%E4%B8%89%E5%8C%85%EF%BC%9Amain_inR1_outI2/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/blogs/2021/11/20/%E4%B8%BB%E6%A8%A1%E5%BC%8F%E7%AC%AC%E4%B8%89%E5%8C%85%EF%BC%9Amain_inR1_outI2/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h3 id="1-序言"><a href="#1-序言" class="headerlink" title="1. 序言"></a>1. 序言</h3><p><code>main_inR1_outI2()</code>函数是ISAKMP协商过程中==第三包的核心处理函数的入口==。这里我们主要说明<code>main_inR1_outI2</code>的函数调用关系、处理流程以及对源码的注释分析，关于<code>main_inR1_outI2</code>的上下文环境暂不叙述，留给后面的文章进行更新。</p>
+<span id="more"></span>
+<p>ISAKMP协商报文的处理流程都比较复杂，一个函数有几百行都是很常见的，因此个人学习期间难免有遗漏和理解错误的地方，请大家多多批评指正。</p>
+<p>对于源码的学习，我并没有把每一行进行备注，而是将自己认为的关键点做了注释或者标注。</p>
+<hr>
+<h3 id="2-函数调用关系"><a href="#2-函数调用关系" class="headerlink" title="2. 函数调用关系"></a>2. 函数调用关系</h3><blockquote>
+<p>注意：这里我把收到对方报文后的处理流程也添加上了，主要是在学习源码过程中遇到<code>complete_v1_state_transition</code>执行了两次。第二次会检测第一次的返回值，因此不会重复的发送报文更新状态。</p>
+</blockquote>
+<ul>
+<li>process_v1_packet<ul>
+<li>process_packet_tail<ul>
+<li>smc-&gt;processor(md)<ul>
+<li>main_inR1_outI2<ul>
+<li>build_ke<ul>
+<li>send_crypto_helper_request<ul>
+<li>pluto_do_crypto_op</li>
+<li>main_inR1_outI2_continue<ul>
+<li>main_inR1_outI2_tail<ul>
+<li>init_pbs</li>
+<li>ship_KE</li>
+<li>ship_nonce</li>
+<li>nat_traversal_add_natd</li>
+<li>close_message</li>
+<li>insert_state</li>
+</ul>
+</li>
+<li>complete_v1_state_transition</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>complete_v1_state_transition</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p><img src="https://raw.githubusercontent.com/Top-Fish/PhotoRepository/main/img/SSL-TLS/20211120204847.png" alt="image-20200521075841786"></p>
+<h3 id="3-第三个报文流程图"><a href="#3-第三个报文流程图" class="headerlink" title="3. 第三个报文流程图"></a>3. 第三个报文流程图</h3><p>由于第三个报文的核心处理函数包含多个，不仅仅包含<code>main_inR1_outI2</code>, 因此这里会将涉及的关键函数接口都添加到流程图中，方便根据函数定位对应的功能。</p>
+<hr>
+<ul>
+<li><input checked="" disabled="" type="checkbox"> <strong>解析对端发送的SA载荷，确定对端选择的算法，并将其存储在状态/连接上</strong></li>
+<li><input checked="" disabled="" type="checkbox"> <strong>生成秘钥交换材料和Nonce信息</strong></li>
+<li><input checked="" disabled="" type="checkbox"> ==构造应答报文(第四个报文）==<ul>
+<li><input checked="" disabled="" type="checkbox"> <strong>填充KE载荷和Nonce载荷</strong>。</li>
+</ul>
+</li>
+</ul>
+<hr>
+<p><img src="https://raw.githubusercontent.com/Top-Fish/PhotoRepository/main/img/SSL-TLS/20211120204851.png" alt="image-20200520231919967"></p>
+<h3 id="4-main-inR1-outI2源码注释"><a href="#4-main-inR1-outI2源码注释" class="headerlink" title="4. main_inR1_outI2源码注释"></a>4. main_inR1_outI2源码注释</h3><ul>
+<li><input checked="" disabled="" type="checkbox"> 解析收到的第二个报文，确定对端选择的算法，并将算法存储在状态结构上</li>
+<li><input checked="" disabled="" type="checkbox"> 申请生成交换密钥信息</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="function">stf_status</span></span><br><span class="line"><span class="function"><span class="title">main_inR1_outI2</span><span class="params">(struct msg_digest *md)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">state</span> *<span class="title">const</span> <span class="title">st</span> =</span> md-&gt;st;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* verify echoed SA */</span></span><br><span class="line">    &#123;<span class="comment">/*md-&gt;chain为解析完毕的收到的报文,下标为np的值*/</span></span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">payload_digest</span> *<span class="title">const</span> <span class="title">sapd</span> =</span> md-&gt;chain[ISAKMP_NEXT_SA];</span><br><span class="line"></span><br><span class="line">	 <span class="comment">/*解析对端SA, 由于无需填充应答SA因此第三个参数为NULL*/</span></span><br><span class="line">	RETURN_STF_FAILURE(parse_isakmp_sa_body(&amp;sapd-&gt;pbs</span><br><span class="line">						, &amp;sapd-&gt;payload.sa</span><br><span class="line">						, <span class="literal">NULL</span>, TRUE, st));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">ifdef</span> NAT_TRAVERSAL</span></span><br><span class="line">    DBG(DBG_NATT, DBG_log(<span class="string">&quot;sender checking NAT-T: %d and %d&quot;</span></span><br><span class="line">				 , nat_traversal_enabled</span><br><span class="line">				 , md-&gt;quirks.nat_traversal_vid))</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (nat_traversal_enabled &amp;&amp; md-&gt;quirks.nat_traversal_vid) &#123;<span class="comment">/*获取NAT-T采用的标准*/</span></span><br><span class="line">	st-&gt;hidden_variables.st_nat_traversal = nat_traversal_vid_to_method(md-&gt;quirks.nat_traversal_vid);</span><br><span class="line">	openswan_log(<span class="string">&quot;enabling possible NAT-traversal with method %s&quot;</span></span><br><span class="line">	     , bitnamesof(natt_type_bitnames, st-&gt;hidden_variables.st_nat_traversal));</span><br><span class="line">    &#125;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line"></span><br><span class="line">    &#123;<span class="comment">/*密钥交换*/</span></span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">ke_continuation</span> *<span class="title">ke</span> =</span> alloc_thing(struct ke_continuation</span><br><span class="line">						 , <span class="string">&quot;outI2 KE&quot;</span>);</span><br><span class="line">	ke-&gt;md = md;</span><br><span class="line"></span><br><span class="line">	passert(st-&gt;st_sec_in_use==FALSE);<span class="comment">/*是否已经加密,是的话，状态有误，返回退出*/</span></span><br><span class="line">	pcrc_init(&amp;ke-&gt;ke_pcrc);</span><br><span class="line">	ke-&gt;ke_pcrc.pcrc_func = main_inR1_outI2_continue;</span><br><span class="line">	set_suspended(st, md);</span><br><span class="line">        <span class="comment">/*构建秘钥交换载荷信息*/</span></span><br><span class="line">	<span class="keyword">return</span> build_ke(&amp;ke-&gt;ke_pcrc, st, st-&gt;st_oakley.group, st-&gt;st_import);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="5-build-ke源码注释"><a href="#5-build-ke源码注释" class="headerlink" title="5. build_ke源码注释"></a>5. build_ke源码注释</h2><ul>
+<li><input checked="" disabled="" type="checkbox"> 初始化并发送加密请求<ul>
+<li><input disabled="" type="checkbox"> 生成加密材料、Nonce载荷、构建应答报文在<code>send_crypto_helper_request</code>及其以后。</li>
+</ul>
+</li>
+<li><input checked="" disabled="" type="checkbox"> 完成报文发送后的后续操作</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="function">stf_status <span class="title">build_ke</span><span class="params">(struct pluto_crypto_req_cont *cn</span></span></span><br><span class="line"><span class="params"><span class="function">		    , struct state *st</span></span></span><br><span class="line"><span class="params"><span class="function">		    , <span class="keyword">const</span> struct oakley_group_desc *group</span></span></span><br><span class="line"><span class="params"><span class="function">		    , <span class="keyword">enum</span> crypto_importance importance)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">pluto_crypto_req</span> <span class="title">rd</span>;</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">pluto_crypto_req</span> *<span class="title">r</span> =</span> &amp;rd;</span><br><span class="line">    <span class="keyword">err_t</span> e;</span><br><span class="line">    <span class="keyword">bool</span> toomuch = FALSE;</span><br><span class="line"><span class="comment">/*初始化加密请求*/</span></span><br><span class="line">    pcr_init(r, pcr_build_kenonce, importance);</span><br><span class="line">    r-&gt;pcr_d.kn.oakley_group   = group-&gt;group;</span><br><span class="line"></span><br><span class="line">    cn-&gt;pcrc_serialno = st-&gt;st_serialno;</span><br><span class="line">	<span class="comment">/*发送加密请求*/</span></span><br><span class="line">    e= send_crypto_helper_request(r, cn, &amp;toomuch);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span>(e != <span class="literal">NULL</span>) &#123;<span class="comment">/*加密失败*/</span></span><br><span class="line">	loglog(RC_LOG_SERIOUS, <span class="string">&quot;can not start crypto helper: %s&quot;</span>, e);</span><br><span class="line">	<span class="keyword">if</span>(toomuch) &#123;</span><br><span class="line">	    <span class="keyword">return</span> STF_TOOMUCHCRYPTO;</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">	    <span class="keyword">return</span> STF_FAIL;</span><br><span class="line">	&#125;</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span>(!toomuch) &#123;<span class="comment">/*加密任务繁忙，先挂起等待再次调度*/</span></span><br><span class="line">	st-&gt;st_calculating = TRUE;</span><br><span class="line">	delete_event(st);</span><br><span class="line">	event_schedule(EVENT_CRYPTO_FAILED, EVENT_CRYPTO_FAILED_DELAY, st);</span><br><span class="line">	<span class="keyword">return</span> STF_SUSPEND;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">	<span class="comment">/* we must have run the continuation directly, so</span></span><br><span class="line"><span class="comment">	 * complete_v1_state_transition already got called.</span></span><br><span class="line"><span class="comment">	 * 由于我们已经手动执行了main_inR1_outI2_continue(),该函数最终会调用到complete_v1_state_transition, 因此在(process_v1_state_xxx流程中不必再此执行状态转换函数。因此返回STF_INLINE，当再次到complete_v1_state_transition判断返回值为它，则不再执行此函数。)</span></span><br><span class="line"><span class="comment">	 */</span></span><br><span class="line">	<span class="keyword">return</span> STF_INLINE;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="6-send-crypto-helper-request源码注释"><a href="#6-send-crypto-helper-request源码注释" class="headerlink" title="6. send_crypto_helper_request源码注释"></a>6. send_crypto_helper_request源码注释</h2><ul>
+<li><input checked="" disabled="" type="checkbox"> 生成秘钥信息(KE信息、Nonce信息)，并存储在r中；</li>
+<li><input checked="" disabled="" type="checkbox"> 执行后续处理函数：<code>main_inR1_outI2_continue</code></li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * this function is called with a request to do some cryptographic operations</span></span><br><span class="line"><span class="comment"> * along with a continuation structure, which will be used to deal with</span></span><br><span class="line"><span class="comment"> * the response.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * This may fail if there are no helpers that can take any data, in which</span></span><br><span class="line"><span class="comment"> * case an error is returned.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">err_t</span> <span class="title">send_crypto_helper_request</span><span class="params">(struct pluto_crypto_req *r</span></span></span><br><span class="line"><span class="params"><span class="function">				 , struct pluto_crypto_req_cont *cn</span></span></span><br><span class="line"><span class="params"><span class="function">				 , <span class="keyword">bool</span> *toomuch)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">pluto_crypto_worker</span> *<span class="title">w</span>;</span></span><br><span class="line">    <span class="keyword">int</span> cnt;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* do it all ourselves? */</span></span><br><span class="line">    <span class="keyword">if</span>(pc_workers == <span class="literal">NULL</span>) &#123;<span class="comment">/*据说一般会执行此分支*/</span></span><br><span class="line">	reset_cur_state();</span><br><span class="line"></span><br><span class="line"><span class="comment">/*生成nonce值相关*/</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">ifdef</span> HAVE_LIBNSS</span></span><br><span class="line">	pluto_do_crypto_op(r,pc_helper_num);</span><br><span class="line"><span class="meta">#<span class="meta-keyword">else</span></span></span><br><span class="line">	pluto_do_crypto_op(r);</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line">	<span class="comment">/* call the continuation */</span></span><br><span class="line">	(*cn-&gt;pcrc_func)(cn, r, <span class="literal">NULL</span>);<span class="comment">//1 /*执行后续函数，如main_inR1_outI2_continue等*/</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">/* indicate that we did everything ourselves */</span></span><br><span class="line">	*toomuch = TRUE;</span><br><span class="line"></span><br><span class="line">	pfree(cn);</span><br><span class="line">	<span class="keyword">return</span> <span class="literal">NULL</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">/*后续代码尚未整理，暂不考虑*/</span></span><br><span class="line">    ... ... </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="7-send-crypto-helper-request源码注释"><a href="#7-send-crypto-helper-request源码注释" class="headerlink" title="7. send_crypto_helper_request源码注释"></a>7. send_crypto_helper_request源码注释</h2><ul>
+<li><input checked="" disabled="" type="checkbox"> 通过<code>main_inR1_outI2_tail</code>构建应答报文</li>
+<li><input checked="" disabled="" type="checkbox"> 通过<code>complete_v1_state_transition</code>完成报文的发送和后续的状态切换等。</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * STATE_MAIN_I1: HDR, SA --&gt; auth dependent</span></span><br><span class="line"><span class="comment"> * PSK_AUTH, DS_AUTH: --&gt; HDR, KE, Ni</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * We do heavy computation here. For Main Mode, this is mostly okay,</span></span><br><span class="line"><span class="comment"> * since have already done a return routeability check.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">void</span></span></span><br><span class="line"><span class="function"><span class="title">main_inR1_outI2_continue</span><span class="params">(struct pluto_crypto_req_cont *pcrc</span></span></span><br><span class="line"><span class="params"><span class="function">			 , struct pluto_crypto_req *r</span></span></span><br><span class="line"><span class="params"><span class="function">			 , <span class="keyword">err_t</span> ugh)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">ke_continuation</span> *<span class="title">ke</span> =</span> (struct ke_continuation *)pcrc;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">msg_digest</span> *<span class="title">md</span> =</span> ke-&gt;md;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">state</span> *<span class="title">const</span> <span class="title">st</span> =</span> md-&gt;st;</span><br><span class="line">    stf_status e;</span><br><span class="line"></span><br><span class="line">    ... ... <span class="comment">/*中间调试信息代码略去*/</span></span><br><span class="line"></span><br><span class="line">    e = main_inR1_outI2_tail(pcrc, r);<span class="comment">/*构造应答报文(第四包)*/</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span>(ke-&gt;md != <span class="literal">NULL</span>) &#123;</span><br><span class="line">	complete_v1_state_transition(&amp;ke-&gt;md, e);<span class="comment">/*完成状态转换、发送报文，...*/</span></span><br><span class="line">	<span class="keyword">if</span>(ke-&gt;md) release_md(ke-&gt;md);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    reset_cur_state();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="8-main-inR1-outI2-tail源码注释"><a href="#8-main-inR1-outI2-tail源码注释" class="headerlink" title="8. main_inR1_outI2_tail源码注释"></a>8. main_inR1_outI2_tail源码注释</h2><ul>
+<li><input checked="" disabled="" type="checkbox"> 构建ISAKMP头部信息</li>
+<li><input checked="" disabled="" type="checkbox"> 构建KE载荷</li>
+<li><input checked="" disabled="" type="checkbox"> 构建Nonce载荷</li>
+<li><input checked="" disabled="" type="checkbox"> 构建NAT-d载荷</li>
+<li><input checked="" disabled="" type="checkbox"> 载荷添加完毕，关闭应答buf, 确定ISAKMP报文长度并填充长度字段。</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="comment">/* STATE_MAIN_I1: HDR, SA --&gt; auth dependent</span></span><br><span class="line"><span class="comment"> * PSK_AUTH, DS_AUTH: --&gt; HDR, KE, Ni</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * The following are not yet implemented:</span></span><br><span class="line"><span class="comment"> * PKE_AUTH: --&gt; HDR, KE, [ HASH(1), ] &lt;IDi1_b&gt;PubKey_r, &lt;Ni_b&gt;PubKey_r</span></span><br><span class="line"><span class="comment"> * RPKE_AUTH: --&gt; HDR, [ HASH(1), ] &lt;Ni_b&gt;Pubkey_r, &lt;KE_b&gt;Ke_i,</span></span><br><span class="line"><span class="comment"> *                &lt;IDi1_b&gt;Ke_i [,&lt;&lt;Cert-I_b&gt;Ke_i]</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * We must verify that the proposal received matches one we sent.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">static</span> stf_status</span></span><br><span class="line"><span class="function"><span class="title">main_inR1_outI2_tail</span><span class="params">(struct pluto_crypto_req_cont *pcrc</span></span></span><br><span class="line"><span class="params"><span class="function">		     , struct pluto_crypto_req *r)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">ke_continuation</span> *<span class="title">ke</span> =</span> (struct ke_continuation *)pcrc;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">msg_digest</span> *<span class="title">md</span> =</span> ke-&gt;md;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">state</span> *<span class="title">const</span> <span class="title">st</span> =</span> md-&gt;st;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**************** build output packet HDR;KE;Ni ****************/</span></span><br><span class="line">    init_pbs(&amp;reply_stream, reply_buffer, <span class="keyword">sizeof</span>(reply_buffer), <span class="string">&quot;reply packet&quot;</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* HDR out.</span></span><br><span class="line"><span class="comment">     * We can&#x27;t leave this to comm_handle() because the isa_np</span></span><br><span class="line"><span class="comment">     * depends on the type of Auth (eventually).</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">     <span class="comment">/*下一个载荷：密钥交换. 填充ISAKMP头部信息*/</span></span><br><span class="line">    echo_hdr(md, FALSE, ISAKMP_NEXT_KE);<span class="comment">/*reply_stream-----md-&gt;rbody*/</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">/* KE out */</span></span><br><span class="line"><span class="comment">/*填充密钥交换载荷，同时状态上记录了密钥的相关信息*/</span></span><br><span class="line">    <span class="keyword">if</span> (!ship_KE(st, r , &amp;st-&gt;st_gi</span><br><span class="line">		 , &amp;md-&gt;rbody, ISAKMP_NEXT_NONCE))</span><br><span class="line">	<span class="keyword">return</span> STF_INTERNAL_ERROR;</span><br><span class="line">    </span><br><span class="line"><span class="comment">/*填充Nonce载荷*/</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">ifdef</span> DEBUG</span></span><br><span class="line">    <span class="comment">/* Ni out */</span></span><br><span class="line">    <span class="keyword">if</span> (!ship_nonce(&amp;st-&gt;st_ni, r, &amp;md-&gt;rbody</span><br><span class="line">		    , (cur_debugging &amp; IMPAIR_BUST_MI2)? ISAKMP_NEXT_VID : ISAKMP_NEXT_NONE</span><br><span class="line">		    , <span class="string">&quot;Ni&quot;</span>))</span><br><span class="line">	<span class="keyword">return</span> STF_INTERNAL_ERROR;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (cur_debugging &amp; IMPAIR_BUST_MI2)</span><br><span class="line">    &#123;</span><br><span class="line">	<span class="comment">/* generate a pointless large VID payload to push message over MTU */</span></span><br><span class="line">	pb_stream vid_pbs;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> (!out_generic(ISAKMP_NEXT_NONE, &amp;isakmp_vendor_id_desc, &amp;md-&gt;rbody</span><br><span class="line">	    , &amp;vid_pbs))</span><br><span class="line">	    <span class="keyword">return</span> STF_INTERNAL_ERROR;</span><br><span class="line">	<span class="keyword">if</span> (!out_zero(<span class="number">1500</span> <span class="comment">/*MTU?*/</span>, &amp;vid_pbs, <span class="string">&quot;Filler VID&quot;</span>))</span><br><span class="line">	    <span class="keyword">return</span> STF_INTERNAL_ERROR;</span><br><span class="line">	close_output_pbs(&amp;vid_pbs);</span><br><span class="line">    &#125;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">else</span></span></span><br><span class="line">    <span class="comment">/* Ni out */</span></span><br><span class="line">    <span class="keyword">if</span> (!ship_nonce(&amp;st-&gt;st_ni, r, &amp;md-&gt;rbody, ISAKMP_NEXT_NONE, <span class="string">&quot;Ni&quot;</span>))</span><br><span class="line">	<span class="keyword">return</span> STF_INTERNAL_ERROR;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line"><span class="comment">/*填充NAT-D载荷*/</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">ifdef</span> NAT_TRAVERSAL</span></span><br><span class="line">    DBG(DBG_NATT, DBG_log(<span class="string">&quot;NAT-T checking st_nat_traversal for NAT_T_WITH_NATD&quot;</span>));</span><br><span class="line">    <span class="keyword">if</span> (st-&gt;hidden_variables.st_nat_traversal &amp; NAT_T_WITH_NATD) &#123;</span><br><span class="line">        DBG(DBG_NATT, DBG_log(<span class="string">&quot;NAT-T found NAT_T_WITH_NATD&quot;</span>));</span><br><span class="line">	<span class="keyword">if</span> (!nat_traversal_add_natd(ISAKMP_NEXT_NONE, &amp;md-&gt;rbody, md))</span><br><span class="line">	    <span class="keyword">return</span> STF_INTERNAL_ERROR;</span><br><span class="line">    &#125;</span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br><span class="line"></span><br><span class="line">    <span class="comment">/* finish message 报文构建结束，确定报文长度*/</span></span><br><span class="line">    close_message(&amp;md-&gt;rbody);</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* Reinsert the state, using the responder cookie we just received */</span></span><br><span class="line">	<span class="comment">//将st从哈希表中删除</span></span><br><span class="line">    unhash_state(st);<span class="comment">/*unhash_state：使用二级指针从双向链表中删除st节点*/</span></span><br><span class="line">    <span class="built_in">memcpy</span>(st-&gt;st_rcookie, md-&gt;hdr.isa_rcookie, COOKIE_SIZE);</span><br><span class="line">	<span class="comment">/*重新计算hash值，并插入全局状态链表中*/</span></span><br><span class="line">    insert_state(st);	<span class="comment">/* needs cookies, connection, and msgid (0) */</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> STF_OK;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="9-NAT-D载荷中哈希值说明"><a href="#9-NAT-D载荷中哈希值说明" class="headerlink" title="9. NAT-D载荷中哈希值说明"></a>9. NAT-D载荷中哈希值说明</h2><p>在NAT-D载荷中，hash值的计算公式为：<br>$$<br>HASH(CKY-I | CKY-R | IP | PORT)<br>$$<br>即分别计算发起者cookie、相应者cookie、IP、端口四个信息的哈希值。对端收到后通过计算报文信息的哈希值和报文中的NAT-D载荷的哈希值相比较，以此来确定中间是否存在NAT设备。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">bool</span> <span class="title">nat_traversal_add_natd</span><span class="params">(<span class="keyword">u_int8_t</span> np, pb_stream *outs,</span></span></span><br><span class="line"><span class="params"><span class="function">			    struct msg_digest *md)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="keyword">unsigned</span> <span class="keyword">char</span> hash[MAX_DIGEST_LEN];</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">state</span> *<span class="title">st</span> =</span> md-&gt;st;</span><br><span class="line">	<span class="keyword">unsigned</span> <span class="keyword">int</span> nat_np;</span><br><span class="line">	<span class="keyword">const</span> ip_address *first, *second;</span><br><span class="line">	<span class="keyword">unsigned</span> <span class="keyword">short</span> firstport, secondport;</span><br><span class="line"></span><br><span class="line">	passert(st-&gt;st_oakley.prf_hasher);</span><br><span class="line"></span><br><span class="line">	DBG(DBG_EMITTING|DBG_NATT, DBG_log(<span class="string">&quot;sending NAT-D payloads&quot;</span>));</span><br><span class="line"></span><br><span class="line">	nat_np = (st-&gt;hidden_variables.st_nat_traversal &amp; NAT_T_WITH_RFC_VALUES</span><br><span class="line">		  ? ISAKMP_NEXT_NATD_RFC : ISAKMP_NEXT_NATD_DRAFTS);</span><br><span class="line">    </span><br><span class="line">	<span class="keyword">if</span> (!out_modify_previous_np(nat_np, outs)) &#123;<span class="comment">/*修改上一个载荷的np字段*/</span></span><br><span class="line">		<span class="keyword">return</span> FALSE;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">/*获取本端和对端的IP和端口*/</span></span><br><span class="line">	first      = &amp;(md-&gt;sender);</span><br><span class="line">	firstport  = ntohs(st-&gt;st_remoteport);</span><br><span class="line">	second     = &amp;(md-&gt;iface-&gt;ip_addr);</span><br><span class="line">	secondport = ntohs(st-&gt;st_localport);</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span>(st-&gt;st_connection-&gt;forceencaps) &#123;<span class="comment">/*强制封装*/</span></span><br><span class="line">		DBG(DBG_NATT, DBG_log(<span class="string">&quot;NAT-T: forceencaps=yes, so mangling hash to force NAT-T detection&quot;</span>));</span><br><span class="line">		firstport=secondport=<span class="number">0</span>;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">/**</span></span><br><span class="line"><span class="comment">	 * First one with sender IP &amp; port</span></span><br><span class="line"><span class="comment">	 */</span></span><br><span class="line">	 <span class="comment">/*计算对端的哈希值: rcookie, icookie, ip, port*/</span></span><br><span class="line">        _natd_hash(st-&gt;st_oakley.prf_hasher, hash, st-&gt;st_icookie</span><br><span class="line">		       , is_zero_cookie(st-&gt;st_rcookie) ? md-&gt;hdr.isa_rcookie : st-&gt;st_rcookie</span><br><span class="line">		       , first, firstport);</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> (!out_generic_raw(nat_np, &amp;isakmp_nat_d, outs</span><br><span class="line">			     , hash</span><br><span class="line">			     , st-&gt;st_oakley.prf_hasher-&gt;hash_digest_len</span><br><span class="line">			     , <span class="string">&quot;NAT-D&quot;</span>)) &#123;</span><br><span class="line">	    <span class="keyword">return</span> FALSE;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">/**</span></span><br><span class="line"><span class="comment">	 * Second one with my IP &amp; port</span></span><br><span class="line"><span class="comment">	 */</span></span><br><span class="line">	 <span class="comment">/*计算本端的哈希值: rcookie, icookie, ip, port*/</span></span><br><span class="line">        _natd_hash(st-&gt;st_oakley.prf_hasher, hash</span><br><span class="line">		       , st-&gt;st_icookie</span><br><span class="line">		       , is_zero_cookie(st-&gt;st_rcookie) ? md-&gt;hdr.isa_rcookie : st-&gt;st_rcookie</span><br><span class="line">		       , second, secondport);</span><br><span class="line">	<span class="keyword">return</span> (out_generic_raw(np, &amp;isakmp_nat_d, outs,</span><br><span class="line">		hash, st-&gt;st_oakley.prf_hasher-&gt;hash_digest_len, <span class="string">&quot;NAT-D&quot;</span>));</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+
+
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/blogs/tags/ipsec/" rel="tag"># IPSec</a>
+              <a href="/blogs/tags/openswan/" rel="tag"># openswan</a>
+              <a href="/blogs/tags/VPN/" rel="tag"># VPN</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/blogs/2021/11/20/%E4%B8%BB%E6%A8%A1%E5%BC%8F%E7%AC%AC%E4%B8%80%E5%8C%85%EF%BC%9Amain_outI1()/" rel="prev" title="主模式第一包：main_outI1()">
+      <i class="fa fa-chevron-left"></i> 主模式第一包：main_outI1()
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/blogs/2021/11/20/openswan%E4%B8%93%E6%A0%8F%E5%BA%8F%E8%A8%80/" rel="next" title="openswan专栏序言">
+      openswan专栏序言 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-%E5%BA%8F%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">1. 序言</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-%E5%87%BD%E6%95%B0%E8%B0%83%E7%94%A8%E5%85%B3%E7%B3%BB"><span class="nav-number">2.</span> <span class="nav-text">2. 函数调用关系</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-%E7%AC%AC%E4%B8%89%E4%B8%AA%E6%8A%A5%E6%96%87%E6%B5%81%E7%A8%8B%E5%9B%BE"><span class="nav-number">3.</span> <span class="nav-text">3. 第三个报文流程图</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-main-inR1-outI2%E6%BA%90%E7%A0%81%E6%B3%A8%E9%87%8A"><span class="nav-number">4.</span> <span class="nav-text">4. main_inR1_outI2源码注释</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#5-build-ke%E6%BA%90%E7%A0%81%E6%B3%A8%E9%87%8A"><span class="nav-number"></span> <span class="nav-text">5. build_ke源码注释</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#6-send-crypto-helper-request%E6%BA%90%E7%A0%81%E6%B3%A8%E9%87%8A"><span class="nav-number"></span> <span class="nav-text">6. send_crypto_helper_request源码注释</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#7-send-crypto-helper-request%E6%BA%90%E7%A0%81%E6%B3%A8%E9%87%8A"><span class="nav-number"></span> <span class="nav-text">7. send_crypto_helper_request源码注释</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#8-main-inR1-outI2-tail%E6%BA%90%E7%A0%81%E6%B3%A8%E9%87%8A"><span class="nav-number"></span> <span class="nav-text">8. main_inR1_outI2_tail源码注释</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#9-NAT-D%E8%BD%BD%E8%8D%B7%E4%B8%AD%E5%93%88%E5%B8%8C%E5%80%BC%E8%AF%B4%E6%98%8E"><span class="nav-number"></span> <span class="nav-text">9. NAT-D载荷中哈希值说明</span></a></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="叨陪鲤"
+      src="/blogs/images/me.jpg">
+  <p class="site-author-name" itemprop="name">叨陪鲤</p>
+  <div class="site-description" itemprop="description">他日趋庭，叨陪鲤对</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/blogs/archives/">
+        
+          <span class="site-state-item-count">14</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/blogs/categories/">
+        <span class="site-state-item-count">3</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/blogs/tags/">
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div>
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<span id="busuanzi_container_site_pv" style='display:none'>
+    本站总访问量 <span id="busuanzi_value_site_pv"></span> 次
+    <span class="post-meta-divider">|</span>
+</span>
+<span id="busuanzi_container_site_uv" style='display:none'>
+    有<span id="busuanzi_value_site_uv"></span>人看过我的博客啦
+</span>
+</div>
+
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">叨陪鲤</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> 强力驱动
+  </div>
+
+
+    <script async src="//dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+        
+<div class="busuanzi-count">
+  <script data-pjax async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/blogs/lib/anime.min.js"></script>
+  <script src="/blogs/lib/pjax/pjax.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="/blogs/lib/velocity/velocity.min.js"></script>
+  <script src="/blogs/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/blogs/js/utils.js"></script>
+
+<script src="/blogs/js/motion.js"></script>
+
+
+<script src="/blogs/js/schemes/muse.js"></script>
+
+
+<script src="/blogs/js/next-boot.js"></script>
+
+  <script>
+var pjax = new Pjax({
+  selectors: [
+    'head title',
+    '#page-configurations',
+    '.content-wrap',
+    '.post-toc-wrap',
+    '.languages',
+    '#pjax'
+  ],
+  switches: {
+    '.post-toc-wrap': Pjax.switches.innerHTML
+  },
+  analytics: false,
+  cacheBust: false,
+  scrollTo : !CONFIG.bookmark.enable
+});
+
+window.addEventListener('pjax:success', () => {
+  document.querySelectorAll('script[data-pjax], script#page-configurations, #pjax script').forEach(element => {
+    var code = element.text || element.textContent || element.innerHTML || '';
+    var parent = element.parentNode;
+    parent.removeChild(element);
+    var script = document.createElement('script');
+    if (element.id) {
+      script.id = element.id;
+    }
+    if (element.className) {
+      script.className = element.className;
+    }
+    if (element.type) {
+      script.type = element.type;
+    }
+    if (element.src) {
+      script.src = element.src;
+      // Force synchronous loading of peripheral JS.
+      script.async = false;
+    }
+    if (element.dataset.pjax !== undefined) {
+      script.dataset.pjax = '';
+    }
+    if (code !== '') {
+      script.appendChild(document.createTextNode(code));
+    }
+    parent.appendChild(script);
+  });
+  NexT.boot.refresh();
+  // Define Motion Sequence & Bootstrap Motion.
+  if (CONFIG.motion.enable) {
+    NexT.motion.integrator
+      .init()
+      .add(NexT.motion.middleWares.subMenu)
+      .add(NexT.motion.middleWares.postList)
+      .bootstrap();
+  }
+  NexT.utils.updateSidebarPosition();
+});
+</script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/blogs/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <div id="pjax">
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('[object Object]', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'MQdIgAGKML1LrVfkG1rbQUgO-gzGzoHsz',
+      appKey     : '3ECTEO4bp11EiKGpp4bTd07P',
+      placeholder: "欢迎留言交流学习！",
+      avatar     : 'robohash',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : 'en, zh-cn' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+    </div>
+</body>
+</html>
