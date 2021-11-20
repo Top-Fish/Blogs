@@ -21,12 +21,12 @@
     var CONFIG = {"hostname":".github.io","root":"/blogs/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"always","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"buttons","active":"valine","storage":true,"lazyload":false,"nav":null,"activeClass":"valine"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":true},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="RCU经典文献  What is RCU, Fundamentally?  What is RCU? Part 2: Usage  RCU part 3: the RCU API  linux kernel  RCU作者的主页介绍">
+  <meta name="description" content="RCU经典文献  What is RCU, Fundamentally?  What is RCU? Part 2: Usage  RCU part 3: the RCU API  linux kernel  RCU作者的主页介绍  这几个连接简直就是一个宝藏，里面的干活很多很多！！！有时间一定要多看看。下文中的内容是看第一个和第二个链接的笔记和整理。直接观看原文，效果更佳。  RCU锁特点介">
 <meta property="og:type" content="article">
-<meta property="og:title" content="💝RCU锁原理深度思考💝">
+<meta property="og:title" content="&lt;marquee&gt;💝RCU锁原理深度思考💝&lt;&#x2F;marquee&gt;">
 <meta property="og:url" content="https://.github.io/blogs/2021/11/20/RCU%E9%94%81%E6%95%B4%E7%90%86/index.html">
 <meta property="og:site_name" content="遇见你是我最美丽的意外">
-<meta property="og:description" content="RCU经典文献  What is RCU, Fundamentally?  What is RCU? Part 2: Usage  RCU part 3: the RCU API  linux kernel  RCU作者的主页介绍">
+<meta property="og:description" content="RCU经典文献  What is RCU, Fundamentally?  What is RCU? Part 2: Usage  RCU part 3: the RCU API  linux kernel  RCU作者的主页介绍  这几个连接简直就是一个宝藏，里面的干活很多很多！！！有时间一定要多看看。下文中的内容是看第一个和第二个链接的笔记和整理。直接观看原文，效果更佳。  RCU锁特点介">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://static.lwn.net/images/logo/barepenguin-70.png">
 <meta property="og:image" content="https://raw.githubusercontent.com/Top-Fish/PhotoRepository/main/img/SSL-TLS/20211120191148.jpg">
@@ -39,7 +39,7 @@
 <meta property="og:image" content="https://raw.githubusercontent.com/Top-Fish/PhotoRepository/main/img/SSL-TLS/20211120191212.png">
 <meta property="og:image" content="https://raw.githubusercontent.com/Top-Fish/PhotoRepository/main/img/SSL-TLS/20211120191216.png">
 <meta property="article:published_time" content="2021-11-20T03:28:38.000Z">
-<meta property="article:modified_time" content="2021-11-20T11:12:20.843Z">
+<meta property="article:modified_time" content="2021-11-20T11:14:24.358Z">
 <meta property="article:author" content="叨陪鲤">
 <meta property="article:tag" content="Linux内核">
 <meta property="article:tag" content="同步互斥机制">
@@ -59,7 +59,7 @@
   };
 </script>
 
-  <title>💝RCU锁原理深度思考💝 | 遇见你是我最美丽的意外</title>
+  <title><marquee>💝RCU锁原理深度思考💝</marquee> | 遇见你是我最美丽的意外</title>
   
 
 
@@ -216,7 +216,7 @@
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          💝RCU锁原理深度思考💝
+          <marquee>💝RCU锁原理深度思考💝</marquee>
         </h1>
 
         <div class="post-meta">
@@ -227,7 +227,7 @@
               <span class="post-meta-item-text">发表于</span>
               
 
-              <time title="创建时间：2021-11-20 11:28:38 / 修改时间：19:12:20" itemprop="dateCreated datePublished" datetime="2021-11-20T11:28:38+08:00">2021-11-20</time>
+              <time title="创建时间：2021-11-20 11:28:38 / 修改时间：19:14:24" itemprop="dateCreated datePublished" datetime="2021-11-20T11:28:38+08:00">2021-11-20</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -240,7 +240,7 @@
             </span>
 
           
-            <span id="/blogs/2021/11/20/RCU%E9%94%81%E6%95%B4%E7%90%86/" class="post-meta-item leancloud_visitors" data-flag-title="💝RCU锁原理深度思考💝" title="阅读次数">
+            <span id="/blogs/2021/11/20/RCU%E9%94%81%E6%95%B4%E7%90%86/" class="post-meta-item leancloud_visitors" data-flag-title="<marquee>💝RCU锁原理深度思考💝</marquee>" title="阅读次数">
               <span class="post-meta-item-icon">
                 <i class="fa fa-eye"></i>
               </span>
@@ -271,15 +271,15 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h2 id="RCU经典文献"><a href="#RCU经典文献" class="headerlink" title="RCU经典文献"></a>RCU经典文献</h2><ul>
+        <span id="more"></span>
+
+<h2 id="RCU经典文献"><a href="#RCU经典文献" class="headerlink" title="RCU经典文献"></a>RCU经典文献</h2><ul>
 <li><input checked="" disabled="" type="checkbox"> <a target="_blank" rel="noopener" href="https://lwn.net/Articles/262464/">What is RCU, Fundamentally?</a></li>
 <li><input checked="" disabled="" type="checkbox"> <a target="_blank" rel="noopener" href="https://lwn.net/Articles/263130/">What is RCU? Part 2: Usage</a></li>
 <li><input checked="" disabled="" type="checkbox"> <a target="_blank" rel="noopener" href="https://lwn.net/Articles/264090/">RCU part 3: the RCU API</a></li>
 <li><input checked="" disabled="" type="checkbox"> <a target="_blank" rel="noopener" href="https://lwn.net/Kernel/Index/">linux kernel</a></li>
 <li><input checked="" disabled="" type="checkbox"> <a target="_blank" rel="noopener" href="http://www.rdrop.com/users/paulmck/RCU/">RCU作者的主页介绍</a></li>
 </ul>
-<span id="more"></span>
-
 <p>这几个连接简直就是一个宝藏，里面的干活很多很多！！！有时间一定要多看看。下文中的内容是看第一个和第二个链接的笔记和整理。直接观看原文，效果更佳。</p>
 <p><img src="https://static.lwn.net/images/logo/barepenguin-70.png" alt="LWN.net Logo"></p>
 <h2 id="RCU锁特点介绍"><a href="#RCU锁特点介绍" class="headerlink" title="RCU锁特点介绍"></a>RCU锁特点介绍</h2><p>Read-copy_update(简称RCU)技术是一种数据同步机制。常见的数据同步机制有：互斥锁，自旋锁，读写锁，顺序锁，信号量等手段。而RCU锁是一种比较高效的并发编程技术，它与2002年10月被添加到Linux内核中，在很多场景中它是用来替代读写锁的。</p>
@@ -375,8 +375,8 @@
     <div class="post-nav">
       <div class="post-nav-item"></div>
       <div class="post-nav-item">
-    <a href="/blogs/2021/11/20/openswan%E4%B8%93%E6%A0%8F%E7%9B%AE%E5%BD%95/" rel="next" title="💝openswan专栏目录💝">
-      💝openswan专栏目录💝 <i class="fa fa-chevron-right"></i>
+    <a href="/blogs/2021/11/20/openswan%E4%B8%93%E6%A0%8F%E7%9B%AE%E5%BD%95/" rel="next" title="<marquee>💝openswan专栏目录💝</marquee>">
+      <marquee>💝openswan专栏目录💝</marquee> <i class="fa fa-chevron-right"></i>
     </a></div>
     </div>
       </footer>

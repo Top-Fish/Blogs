@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
-    <title>💝openswan专栏目录💝</title>
+    <title>&lt;marquee&gt;💝openswan专栏目录💝&lt;/marquee&gt;</title>
     <url>/blogs/2021/11/20/openswan%E4%B8%93%E6%A0%8F%E7%9B%AE%E5%BD%95/</url>
-    <content><![CDATA[<p><font color="#0000bb"><marquee>为了方便查阅现有的文章，特准备一个目录页供后续查询使用</marquee></font></p>
+    <content><![CDATA[<span id="more"></span>
+<p><font color="#0000bb">为了方便查阅现有的文章，特准备一个目录页供后续查询使用</font></p>
 <p><img src="https://img-blog.csdnimg.cn/20201122205357123.jpg?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3MyNjAzODk4MjYw,size_16,color_FFFFFF,t_70#pic_center"></p>
-<span id="more"></span>
 <ul>
 <li><input checked="" disabled="" type="checkbox"> <a href="https://blog.csdn.net/s2603898260/article/details/105780700">专栏序言</a></li>
 </ul>
@@ -70,17 +70,17 @@
       </tags>
   </entry>
   <entry>
-    <title>💝RCU锁原理深度思考💝</title>
+    <title>&lt;marquee&gt;💝RCU锁原理深度思考💝&lt;/marquee&gt;</title>
     <url>/blogs/2021/11/20/RCU%E9%94%81%E6%95%B4%E7%90%86/</url>
-    <content><![CDATA[<h2 id="RCU经典文献"><a href="#RCU经典文献" class="headerlink" title="RCU经典文献"></a>RCU经典文献</h2><ul>
+    <content><![CDATA[<span id="more"></span>
+
+<h2 id="RCU经典文献"><a href="#RCU经典文献" class="headerlink" title="RCU经典文献"></a>RCU经典文献</h2><ul>
 <li><input checked="" disabled="" type="checkbox"> <a href="https://lwn.net/Articles/262464/">What is RCU, Fundamentally?</a></li>
 <li><input checked="" disabled="" type="checkbox"> <a href="https://lwn.net/Articles/263130/">What is RCU? Part 2: Usage</a></li>
 <li><input checked="" disabled="" type="checkbox"> <a href="https://lwn.net/Articles/264090/">RCU part 3: the RCU API</a></li>
 <li><input checked="" disabled="" type="checkbox"> <a href="https://lwn.net/Kernel/Index/">linux kernel</a></li>
 <li><input checked="" disabled="" type="checkbox"> <a href="http://www.rdrop.com/users/paulmck/RCU/">RCU作者的主页介绍</a></li>
 </ul>
-<span id="more"></span>
-
 <p>这几个连接简直就是一个宝藏，里面的干活很多很多！！！有时间一定要多看看。下文中的内容是看第一个和第二个链接的笔记和整理。直接观看原文，效果更佳。</p>
 <p><img src="https://static.lwn.net/images/logo/barepenguin-70.png" alt="LWN.net Logo"></p>
 <h2 id="RCU锁特点介绍"><a href="#RCU锁特点介绍" class="headerlink" title="RCU锁特点介绍"></a>RCU锁特点介绍</h2><p>Read-copy_update(简称RCU)技术是一种数据同步机制。常见的数据同步机制有：互斥锁，自旋锁，读写锁，顺序锁，信号量等手段。而RCU锁是一种比较高效的并发编程技术，它与2002年10月被添加到Linux内核中，在很多场景中它是用来替代读写锁的。</p>
