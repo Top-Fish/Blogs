@@ -1,71 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
-    <title>openswan专栏目录</title>
-    <url>/Top-Fish/Top-Fish.github.io/2021/11/20/openswan%E4%B8%93%E6%A0%8F%E7%9B%AE%E5%BD%95/</url>
-    <content><![CDATA[<h1><center><font color="#ff0000">💝为了方便查阅现有的文章，特准备一个目录页供后续查询使用💝</font></center></h1>
-
-<p><img src="https://img-blog.csdnimg.cn/20201122205357123.jpg?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3MyNjAzODk4MjYw,size_16,color_FFFFFF,t_70#pic_center"></p>
-<span id="more"></span>
-<ul>
-<li><input checked="" disabled="" type="checkbox"> <a href="https://blog.csdn.net/s2603898260/article/details/105780700">专栏序言</a><h3 id="1-基础知识"><a href="#1-基础知识" class="headerlink" title="1. 基础知识"></a>1. 基础知识</h3></li>
-<li><input checked="" disabled="" type="checkbox"> <a href="https://blog.csdn.net/s2603898260/article/details/105810406">openswan任务调度基础知识之信号</a><h3 id="2-openswan环境搭建"><a href="#2-openswan环境搭建" class="headerlink" title="2. openswan环境搭建"></a>2. openswan环境搭建</h3></li>
-<li><input checked="" disabled="" type="checkbox"> <a href="https://blog.csdn.net/s2603898260/article/details/112975141">openswan框架和编译时说明</a></li>
-<li><input checked="" disabled="" type="checkbox"> <a href="https://blog.csdn.net/s2603898260/article/details/105855454">openswan编译安装</a><h3 id="3-NAT穿越"><a href="#3-NAT穿越" class="headerlink" title="3. NAT穿越"></a>3. NAT穿越</h3></li>
-<li><input checked="" disabled="" type="checkbox"> <a href="https://blog.csdn.net/s2603898260/article/details/105214411">NAT-T下的端口浮动</a></li>
-<li><input checked="" disabled="" type="checkbox"> <a href="https://blog.csdn.net/s2603898260/article/details/105212626">NAT-T原理和环境搭建</a><h3 id="4-openswan函数笔记"><a href="#4-openswan函数笔记" class="headerlink" title="4. openswan函数笔记"></a>4. openswan函数笔记</h3></li>
-<li><input checked="" disabled="" type="checkbox"> <a href="https://blog.csdn.net/s2603898260/article/details/106172947">in_struct和out_struct讲解</a></li>
-<li><input checked="" disabled="" type="checkbox"> <a href="https://blog.csdn.net/s2603898260/article/details/106131750">openswan发送状态分析</a></li>
-<li><input checked="" disabled="" type="checkbox"> <a href="https://blog.csdn.net/s2603898260/article/details/107913541">pluto中监听各个网口的500端口处理逻辑</a></li>
-<li><input checked="" disabled="" type="checkbox"> <a href="">pluto中CPU占有率高的接口与优化方案</a></li>
-<li><input checked="" disabled="" type="checkbox"> <a href="https://blog.csdn.net/s2603898260/article/details/106578067">Openswan支持的算法及参数信息</a></li>
-<li><input checked="" disabled="" type="checkbox"> <a href="https://blog.csdn.net/s2603898260/article/details/113447879">命令行解析函数：getopt_long、getopt</a></li>
-<li><input checked="" disabled="" type="checkbox"> <a href="https://blog.csdn.net/s2603898260/article/details/113445039">ipsec.conf配置文件多个保护子网解析流程</a> </li>
-</ul>
-<h3 id="5-IKEv1协商流程"><a href="#5-IKEv1协商流程" class="headerlink" title="5. IKEv1协商流程"></a>5. IKEv1协商流程</h3><ul>
-<li><input checked="" disabled="" type="checkbox"> <a href="https://blog.csdn.net/s2603898260/article/details/106226299">openswan协商流程之（一）：main_outI1()</a></li>
-<li><input checked="" disabled="" type="checkbox"> <a href="https://blog.csdn.net/s2603898260/article/details/106226416">openswan协商流程之（二）：main_inI1_outR1()</a></li>
-<li><input checked="" disabled="" type="checkbox"> <a href="https://blog.csdn.net/s2603898260/article/details/106247599">openswan协商流程之（三）：main_inR1_outI2()</a> </li>
-<li><input checked="" disabled="" type="checkbox"> <a href="https://blog.csdn.net/s2603898260/article/details/106271199">openswan协商流程之（四）：main_inI2_outR2()</a></li>
-<li><input checked="" disabled="" type="checkbox"> <a href="https://blog.csdn.net/s2603898260/article/details/106310714">openswan协商流程之（五）：main_inR2_outI3()</a> </li>
-<li><input checked="" disabled="" type="checkbox"> <a href="https://blog.csdn.net/s2603898260/article/details/106580396">openswan协商流程之（六）：main_inI3_outR3()</a></li>
-<li><input checked="" disabled="" type="checkbox"> <a href="https://blog.csdn.net/s2603898260/article/details/106592883">openswan协商流程之（七）：main_inR3()</a></li>
-<li><input checked="" disabled="" type="checkbox"> <a href="https://blog.csdn.net/s2603898260/article/details/108252077">openswan快速模式协商流程之（一）：quick_outI1()</a></li>
-<li><input checked="" disabled="" type="checkbox"> <a href="https://blog.csdn.net/s2603898260/article/details/108459144">openswan快速模式协商流程之（二）：quick_inI1_outR1()</a></li>
-<li><input checked="" disabled="" type="checkbox"> <a href="https://blog.csdn.net/s2603898260/article/details/108560293">openswan快速模式协商流程之（三）：quick_inR1_outI2()</a></li>
-</ul>
-<hr>
-<h3 id="6-IKEv2协议相关"><a href="#6-IKEv2协议相关" class="headerlink" title="6. IKEv2协议相关"></a>6. IKEv2协议相关</h3><ul>
-<li><input checked="" disabled="" type="checkbox"> <a href="https://blog.csdn.net/s2603898260/article/details/106915035">IKEv2协议简介</a></li>
-<li><input checked="" disabled="" type="checkbox"> <a href="https://blog.csdn.net/s2603898260/article/details/107117675">IKEv2协议关键知识点总结整理</a></li>
-<li><input checked="" disabled="" type="checkbox"> <a href="https://blog.csdn.net/s2603898260/article/details/109019539">IKEv2协议协商流程: （IKE-SA-INIT 交换）第一包</a></li>
-<li><input checked="" disabled="" type="checkbox"> <a href="https://blog.csdn.net/s2603898260/article/details/109062848">IKEv2协议协商流程: （IKE-SA-INIT 交换）第二包</a></li>
-</ul>
-<h3 id="7-加密流程"><a href="#7-加密流程" class="headerlink" title="7. 加密流程"></a>7. 加密流程</h3><ul>
-<li><input checked="" disabled="" type="checkbox"> <a href="https://blog.csdn.net/s2603898260/article/details/109929113">ipsec 加密流程（一）：ipsec策略匹配</a></li>
-<li><input checked="" disabled="" type="checkbox"> <a href="https://blog.csdn.net/s2603898260/article/details/109943878">ipsec 加密流程（二）：ipsec初始化操作</a></li>
-<li><input checked="" disabled="" type="checkbox"> <a href="https://blog.csdn.net/s2603898260/article/details/110018251">ipsec 加密流程（三）：ESP加密、AH认证处理流程</a></li>
-<li><input checked="" disabled="" type="checkbox"> <a href="https://blog.csdn.net/s2603898260/article/details/110410067">ipsec 加密流程（四）：封装状态机和发送流程</a></li>
-</ul>
-<h3 id="8-💖openswan进阶💖"><a href="#8-💖openswan进阶💖" class="headerlink" title="8. 💖openswan进阶💖"></a>8. 💖openswan进阶💖</h3><ul>
-<li><input checked="" disabled="" type="checkbox"> <a href="https://blog.csdn.net/s2603898260/article/details/113043610">ubantu与CentOS虚拟机之间搭建GRE隧道</a></li>
-<li><input checked="" disabled="" type="checkbox"> <a href="https://blog.csdn.net/s2603898260/article/details/113008094">🔥openswan一条隧道多保护子网配置</a></li>
-<li><input checked="" disabled="" type="checkbox"> <a href="https://mp.csdn.net/mp_blog/creation/editor/113075156">🔥为何GRE可以封装组播报文而IPSEC却不行？</a></li>
-<li><input checked="" disabled="" type="checkbox"> <a href="https://blog.csdn.net/s2603898260/article/details/120593578">🔥SSL/TLS 与 IPSec 对比</a></li>
-<li><input checked="" disabled="" type="checkbox"> <a href="https://blog.csdn.net/s2603898260/article/details/113575857">🔥IKE 多预共享密钥问题 解决方案</a><h3 id="9-图解密码学技术"><a href="#9-图解密码学技术" class="headerlink" title="9. 图解密码学技术"></a>9. 图解密码学技术</h3></li>
-<li><input checked="" disabled="" type="checkbox"> <a href="https://blog.csdn.net/s2603898260/article/details/112341844">DH算法图解+数学证明</a></li>
-<li><input checked="" disabled="" type="checkbox"> <a href="https://blog.csdn.net/s2603898260/article/details/112503905">openswan中DH算法说明</a></li>
-<li><input checked="" disabled="" type="checkbox"> <a href="https://blog.csdn.net/s2603898260/article/details/112744384">图解密码学(一)</a></li>
-</ul>
-<h3 id="10-Linux内核IPSEC实现"><a href="#10-Linux内核IPSEC实现" class="headerlink" title="10. Linux内核IPSEC实现"></a>10. Linux内核IPSEC实现</h3>]]></content>
-      <categories>
-        <category>IPSecVPN</category>
-        <category>openswan</category>
-      </categories>
+    <title>hello</title>
+    <url>/Top-Fish/Top-Fish.github.io/2021/11/20/hello/</url>
+    <content><![CDATA[<h1>sdfsdfsdfsdfsdfds</h1>
+]]></content>
       <tags>
         <tag>IPSec</tag>
-        <tag>openswan</tag>
-        <tag>VPN</tag>
       </tags>
   </entry>
 </search>
