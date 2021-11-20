@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
-    <title>&lt;marquee&gt;💝openswan专栏目录💝&lt;/marquee&gt;</title>
+    <title>💝openswan专栏目录💝</title>
     <url>/blogs/2021/11/20/openswan%E4%B8%93%E6%A0%8F%E7%9B%AE%E5%BD%95/</url>
     <content><![CDATA[<p><font color="#0000bb">为了方便查阅现有的文章，特准备一个目录页供后续查询使用</font></p>
 <span id="more"></span>
@@ -73,7 +73,7 @@
       </tags>
   </entry>
   <entry>
-    <title>&lt;marquee&gt;💝RCU锁原理深度思考💝&lt;/marquee&gt;</title>
+    <title>👉👉RCU锁原理深度思考</title>
     <url>/blogs/2021/11/20/RCU%E9%94%81%E6%95%B4%E7%90%86/</url>
     <content><![CDATA[<h2 id="RCU经典文献"><a href="#RCU经典文献" class="headerlink" title="RCU经典文献"></a>RCU经典文献</h2><ul>
 <li><input checked="" disabled="" type="checkbox"> <a href="https://lwn.net/Articles/262464/">What is RCU, Fundamentally?</a></li>
