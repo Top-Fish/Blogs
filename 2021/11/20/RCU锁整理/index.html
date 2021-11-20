@@ -29,17 +29,17 @@
 <meta property="og:description" content="RCU经典文献  What is RCU, Fundamentally?  What is RCU? Part 2: Usage  RCU part 3: the RCU API  linux kernel  RCU作者的主页介绍">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://static.lwn.net/images/logo/barepenguin-70.png">
-<meta property="og:image" content="c:/Users/Admin/Pictures/RCU/rwlockRCUperfPREEMPT.jpg">
-<meta property="og:image" content="c:/Users/Admin/Pictures/RCU/20211016165640.png">
-<meta property="og:image" content="c:/Users/Admin/Pictures/RCU/20211016173627.png">
-<meta property="og:image" content="c:/Users/Admin/Pictures/RCU/20211016174845.png">
-<meta property="og:image" content="c:/Users/Admin/Pictures/RCU/20211016180005.png">
-<meta property="og:image" content="c:/Users/Admin/Pictures/RCU/20211016180116.png">
-<meta property="og:image" content="c:/Users/Admin/Pictures/RCU/20211016183320.png">
-<meta property="og:image" content="c:/Users/Admin/Pictures/RCU/image-20211016182733118.png">
-<meta property="og:image" content="c:/Users/Admin/Pictures/RCU/20211016183743.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/Top-Fish/PhotoRepository/main/img/SSL-TLS/20211120191148.jpg">
+<meta property="og:image" content="https://raw.githubusercontent.com/Top-Fish/PhotoRepository/main/img/SSL-TLS/20211120191142.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/Top-Fish/PhotoRepository/main/img/SSL-TLS/20211120191154.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/Top-Fish/PhotoRepository/main/img/SSL-TLS/20211120191157.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/Top-Fish/PhotoRepository/main/img/SSL-TLS/20211120191202.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/Top-Fish/PhotoRepository/main/img/SSL-TLS/20211120191203.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/Top-Fish/PhotoRepository/main/img/SSL-TLS/20211120191207.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/Top-Fish/PhotoRepository/main/img/SSL-TLS/20211120191212.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/Top-Fish/PhotoRepository/main/img/SSL-TLS/20211120191216.png">
 <meta property="article:published_time" content="2021-11-20T03:28:38.000Z">
-<meta property="article:modified_time" content="2021-11-20T10:48:11.826Z">
+<meta property="article:modified_time" content="2021-11-20T11:12:20.843Z">
 <meta property="article:author" content="叨陪鲤">
 <meta property="article:tag" content="Linux内核">
 <meta property="article:tag" content="同步互斥机制">
@@ -227,7 +227,7 @@
               <span class="post-meta-item-text">发表于</span>
               
 
-              <time title="创建时间：2021-11-20 11:28:38 / 修改时间：18:48:11" itemprop="dateCreated datePublished" datetime="2021-11-20T11:28:38+08:00">2021-11-20</time>
+              <time title="创建时间：2021-11-20 11:28:38 / 修改时间：19:12:20" itemprop="dateCreated datePublished" datetime="2021-11-20T11:28:38+08:00">2021-11-20</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -296,10 +296,10 @@
 </ul>
 <p>这是由于RCU 写操作完毕后，会等待读端的完毕，等所有的读操作完毕后，宽限期结束，此时写端才会将资源释放。这里没有区分优先级，因此低优先级的读操作可能会影响到高优先级的写操作。</p>
 <p>其实，RCU技术的特点还不仅如此，而有一个更重要的特点：<strong>多核扩展性</strong>。RCU虽然我们将其称之为RCU锁，但它并没有采用锁技术，而读写锁则是一个真正的锁，在扩展性上很差，设备CPU核越多，锁的竞争会越激烈，效率会越低。因此在现在很多的实现中，越来越注重<strong>无锁技术</strong>的实现。 下图是在文章<a target="_blank" rel="noopener" href="https://lwn.net/Articles/263130/">What is RCU? Part 2: Usage</a>中的一张RCU和rwlock在多核扩展性上对比图片：</p>
-<p><img src="C:/Users/Admin/Pictures/RCU/rwlockRCUperfPREEMPT.jpg" alt="Graph showing RCU read-side primitives running multiple orders of magnitude faster than those of rwlock."></p>
+<p><img src="https://raw.githubusercontent.com/Top-Fish/PhotoRepository/main/img/SSL-TLS/20211120191148.jpg" alt="Graph showing RCU read-side primitives running multiple orders of magnitude faster than those of rwlock."></p>
 <h2 id="RCU中常见问题"><a href="#RCU中常见问题" class="headerlink" title="RCU中常见问题"></a>RCU中常见问题</h2><h3 id="1-有没有使用引用计数"><a href="#1-有没有使用引用计数" class="headerlink" title="1. 有没有使用引用计数"></a>1. 有没有使用引用计数</h3><p>关于RCU实现原理还有一个误解：<strong>RCU采用了引用计数的方式确定是否存在读者。</strong> 这个观点也是错的。首先RCU并没有采用引用计数的机制，而是采用了一种非常简单的技术来实现；其次如果非要深究到底有没有引用计数，按照<a target="_blank" rel="noopener" href="https://lwn.net/Articles/263130/">What is RCU? Part 2: Usage</a>中的说法是“RCU is a Restricted Reference-Counting Mechanism”，但<strong>本质上是没有采用引用计数的机制</strong>。它的解释如下：</p>
 <p>“rcu_read_lock() 语句可以被认为是获取对 p 的引用，相当于一个引用计数。因为在 rcu_dereference() 分配给 p 之后开始的宽限期不可能在我们到达匹配的 rcu_read_unlock() 之前结束。 这种引用计数方案受到限制，因为我们不允许在 RCU 读端临界区中阻塞，也不允许我们将 RCU 读端临界区从一个任务切换到另一个任务“。 <strong>虽然有点像引用计数，但绝对不是</strong>。</p>
- <img src="C:/Users/Admin/Pictures/RCU/20211016165640.png" alt="image-20211016165636411" style="zoom:80%;" />
+ <img src="https://raw.githubusercontent.com/Top-Fish/PhotoRepository/main/img/SSL-TLS/20211120191142.png" alt="image-20211016165636411" style="zoom:80%;" />
 
 <p>至于它怎么实现：检测是否有人在引用当前变量呢？ 我在下面介绍下 </p>
 <h3 id="2-RCU既然没有使用引用计数，那又是确定是否存在读者引用之？"><a href="#2-RCU既然没有使用引用计数，那又是确定是否存在读者引用之？" class="headerlink" title="2. RCU既然没有使用引用计数，那又是确定是否存在读者引用之？"></a>2. RCU既然没有使用引用计数，那又是确定是否存在读者引用之？</h3><p>RCU 读锁加锁和去锁最基本的函数是：</p>
@@ -308,23 +308,23 @@
 <p>加锁实际上是禁止上下文切换；而解锁是允许上下文切换。<strong>它们是一个全局设置，不与任何一项锁绑定</strong>。这也是为啥RCU读锁不需要任何参数的原因。</p>
 <p><strong>基于此，便可以通过让CPU进行一次上下文切换来实现检测读端是否完成，而不必跟踪每一个引用的进程。</strong> 这是一个RCU非常重要的特点.</p>
 <p>进行这个操作是：<code>synchronize_rcu()</code>, 这个函数在内核中实现有点复杂，它毕竟还需要考虑中断，热插拔等因素。如果只考虑RCU部分，它的功能可以概括为：</p>
-<img src="C:/Users/Admin/Pictures/RCU/20211016173627.png" alt="image-20211016173620773" style="zoom:80%;" />
+<img src="https://raw.githubusercontent.com/Top-Fish/PhotoRepository/main/img/SSL-TLS/20211120191154.png" alt="image-20211016173620773" style="zoom:80%;" />
 
 <p>第一个函数用来遍历所有的CPU；第二行run_on()函数用来将当前线程切换到指定的CPU上。如果这个任务顺利完成，则说明所有的核已经经历过一次上下文切换，此刻必定读端已经结束，否则无法触发切换。</p>
 <p>关于这里，我曾经有一个疑问：<strong>假如最初CPU1读端结束，执行了一次上下文切换；然后在等待其他CPU过程中，又再次进入RCU读临界区，如果此时释放，会导致严重后果吗？</strong> 有点类似于下图(黄色部分表示可以进行上下文切换)</p>
-<img src="C:/Users/Admin/Pictures/RCU/20211016174845.png" alt="image-20211016174842445" style="zoom: 80%;" />
+<img src="https://raw.githubusercontent.com/Top-Fish/PhotoRepository/main/img/SSL-TLS/20211120191157.png" alt="image-20211016174842445" style="zoom: 80%;" />
 
 <p>不过后来想明白了。以替换一个节点为例进行说明：</p>
 <ul>
 <li><font color="#0000ff"><b>链表最初状态如下：</b></font></li>
 </ul>
-<img src="C:/Users/Admin/Pictures/RCU/20211016180005.png" alt="image-20211016175959004" style="zoom:80%;" />
+<img src="https://raw.githubusercontent.com/Top-Fish/PhotoRepository/main/img/SSL-TLS/20211120191202.png" alt="image-20211016175959004" style="zoom:80%;" />
 
 
 
 <ul>
 <li><p><font color="#0000ff"><b>插入一个元素时，先复制一个副本，再次基础上修改，然后完成发布</b></font></p>
-<img src="C:/Users/Admin/Pictures/RCU/20211016180116.png" alt="image-20211016180113839" style="zoom:80%;" />
+<img src="https://raw.githubusercontent.com/Top-Fish/PhotoRepository/main/img/SSL-TLS/20211120191203.png" alt="image-20211016180113839" style="zoom:80%;" />
 
 <p>从此刻开始，rcu宽限期也开始。在发布之前的RCU读端访问的是2号节点(如果有的话)，发布之后，新来的RCU读端读取的是2_new新节点。这是RCU的一个重要特点，<strong>实时性很好</strong>。</p>
 <p>这里还没有完，旧的2号节点还没有被释放。</p>
@@ -340,7 +340,7 @@
 <p>这种检查原理上简单了很多，<strong>但也导致了rcu宽限期比较长</strong>。毕竟这个上下文切换是个全局设置，得照顾到所有的CPU。</p>
 </blockquote>
 <h3 id="3-RCU-读端和写端同时操作，不会触发段错误吗？"><a href="#3-RCU-读端和写端同时操作，不会触发段错误吗？" class="headerlink" title="3.  RCU 读端和写端同时操作，不会触发段错误吗？"></a>3.  RCU 读端和写端同时操作，不会触发段错误吗？</h3><p>这个问题也是我当初百思不得其解的地方。</p>
-<img src="C:/Users/Admin/Pictures/RCU/20211016183320.png" alt="image-20211016182131327" style="zoom:80%;" />
+<img src="https://raw.githubusercontent.com/Top-Fish/PhotoRepository/main/img/SSL-TLS/20211120191207.png" alt="image-20211016182131327" style="zoom:80%;" />
 
 <p>场景：</p>
 <ul>
@@ -349,9 +349,9 @@
 <li>写端开始修改1号节点的后继指针，从2号节点切换到2_new节点；但是读端也正好在1号节点的后继节点，此时会出现后继节点为空导致<strong>链表遍历提前结束的情况</strong>吗？</li>
 </ul>
 <p>这个问题困扰了很久。不过当我再次读<a target="_blank" rel="noopener" href="https://lwn.net/Articles/262464/">What is RCU, Fundamentally?</a>时，发现了上面有这个问题的回答。最初看时竟然没有注意到这个问题。</p>
-<p><img src="C:/Users/Admin/Pictures/RCU/image-20211016182733118.png" alt="image-20211016182733118"></p>
+<p><img src="https://raw.githubusercontent.com/Top-Fish/PhotoRepository/main/img/SSL-TLS/20211120191212.png" alt="image-20211016182733118"></p>
 <p>简单的说：<font color="#0000ff"><b>在Linux系统中，所有的加载和存储操都是原子的，不可能被分割。针对上述场景，读端要么读取到2节点，要么读取到2_new节点。不会出现第三结果。</b></font></p>
-<h3 id="4-RCU-与资源回收"><a href="#4-RCU-与资源回收" class="headerlink" title="4.  RCU 与资源回收"></a>4.  RCU 与资源回收</h3><p><img src="C:/Users/Admin/Pictures/RCU/20211016183743.png" alt="image-20211016183741869"></p>
+<h3 id="4-RCU-与资源回收"><a href="#4-RCU-与资源回收" class="headerlink" title="4.  RCU 与资源回收"></a>4.  RCU 与资源回收</h3><p><img src="https://raw.githubusercontent.com/Top-Fish/PhotoRepository/main/img/SSL-TLS/20211120191216.png" alt="image-20211016183741869"></p>
 <p>最初怎么也不会将这两个联系起来。但是慢慢发现有那么一丁点像</p>
 <p><strong>RCU会等待资源不再被引用时释放对应的资源</strong>。从这么一点看还确实有点像GC的赶脚</p>
 <p>不过他们最大的区别在于(从资源回收上看)：程序员必须手动指定RCU读端临界区资源，甚至手动指定释放的位置。</p>
@@ -373,11 +373,11 @@
 
         
     <div class="post-nav">
-      <div class="post-nav-item">
-    <a href="/blogs/2021/11/20/openswan%E4%B8%93%E6%A0%8F%E7%9B%AE%E5%BD%95/" rel="prev" title="💝openswan专栏目录💝">
-      <i class="fa fa-chevron-left"></i> 💝openswan专栏目录💝
-    </a></div>
       <div class="post-nav-item"></div>
+      <div class="post-nav-item">
+    <a href="/blogs/2021/11/20/openswan%E4%B8%93%E6%A0%8F%E7%9B%AE%E5%BD%95/" rel="next" title="💝openswan专栏目录💝">
+      💝openswan专栏目录💝 <i class="fa fa-chevron-right"></i>
+    </a></div>
     </div>
       </footer>
     
