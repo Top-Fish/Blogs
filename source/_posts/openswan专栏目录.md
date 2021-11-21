@@ -1,5 +1,5 @@
 ---
-title: openswan专栏目录
+title: 💝openswan专栏目录💝
 date: 2021-11-20 11:28:38
 tags: 
 - IPSec
@@ -8,12 +8,16 @@ tags:
 categories: 
 - IPSecVPN
 - openswan
+top: true
 ---
-<h1><center><font color="#ff0000">💝为了方便查阅现有的文章，特准备一个目录页供后续查询使用💝</font></center></h1>
 
-![](https://img-blog.csdnimg.cn/20201122205357123.jpg?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3MyNjAzODk4MjYw,size_16,color_FFFFFF,t_70#pic_center)
+<font color="#0000bb">为了方便查阅现有的文章，特准备一个目录页供后续查询使用</font>
 
 <!--more-->
+
+<img src="https://img-blog.csdnimg.cn/20201122205357123.jpg?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3MyNjAzODk4MjYw,size_16,color_FFFFFF,t_70#pic_center"  />
+
+
  - [x]  [专栏序言](https://blog.csdn.net/s2603898260/article/details/105780700)
 
 ### 1. 基础知识
