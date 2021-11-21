@@ -1,6 +1,14 @@
-# blogs
+# 🏆网站说明
+- main分支： 用来存放网站的源码信息
+- gh-pages分支： web界面发布分支
 
-## 安装过程中用到的文章：
+
+# 🏆网站链接
+- [x] https://top-fish.github.io/blogs/
+
+
+
+# 🏆部署过程中参考文章：
 - [ ] https://blog.csdn.net/zgd826237710/article/details/99671027
 - [ ] https://cloud.tencent.com/developer/article/1481858
 - [ ] https://maybeiscai.github.io/
